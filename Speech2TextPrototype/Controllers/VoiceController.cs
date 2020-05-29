@@ -9,9 +9,12 @@ using System.Globalization;
 using Microsoft.CognitiveServices.Speech;
 using Azure.AI.TextAnalytics;
 using Speech2TextPrototype.Models;
+using Microsoft.Azure.CognitiveServices.Knowledge.QnAMaker;
+using Microsoft.Azure.CognitiveServices.Knowledge.QnAMaker.Models;
 
 namespace Speech2TextPrototype.Controllers
 {
+
     [Route("api/[controller]")]
     [ApiController]
     public class VoiceController : ControllerBase
@@ -53,11 +56,21 @@ namespace Speech2TextPrototype.Controllers
                     break;
             }
 
-            return Ok(new Language() { text = text, entities = Entities});
+            return Ok(new Language() { text = text, entities = Entities });
 
             //return test;
         }
 
+        [HttpGet("{question}")]
+        public QnASearchResultList GetQnA(string question)
+        {
+            var endpointhostName = "https://query-assistant.azurewebsites.net";
+            var endpointKey = "3db47372-6124-4a27-89fe-0e43465e0d0c";
+            string kbId = "9df255bc-67b5-4424-a60a-8f0438c23679";
+            var runtimeClient = new QnAMakerRuntimeClient(new EndpointKeyServiceClientCredentials(endpointKey)) { RuntimeEndpoint = endpointhostName };
+            var response = runtimeClient.Runtime.GenerateAnswerAsync(kbId, new QueryDTO { Question = question }).Result;
+            return response;
+        }
 
         static Entity[] EntityRecognitionExample(TextAnalyticsClient client, String text)
         {

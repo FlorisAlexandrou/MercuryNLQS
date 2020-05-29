@@ -1,18 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Azure.AI.TextAnalytics;
+using Newtonsoft.Json;
 
 namespace Speech2TextPrototype.Models
 {
     public class Language
     {
+        [JsonProperty(PropertyName = "text")]
         public string text { get; set; }
+
+        [JsonProperty(PropertyName = "entities")]
         public Entity[] entities { get; set; }
 
-        public override string ToString() => JsonSerializer.Serialize<Language>(this);
     }
 
     public class Entity
