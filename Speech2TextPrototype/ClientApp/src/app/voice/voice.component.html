@@ -1,0 +1,17 @@
+<h1>Speech To Text</h1>
+
+<button class="btn btn-primary" (click)="Speech2Text()">Press and speak</button>
+
+<p aria-live="polite">Text: <strong>{{ resultText }}</strong></p>
+
+<p aria-live="polite">Entities:</p>
+
+<ol>
+  <li *ngFor="let entity of entities">
+    Word: {{ entity.text }}
+    , Category: {{ entity.category }}
+    , SubCategory: {{ entity.subcategory }}
+    , Length: {{ entity.length }}
+    , Confidence: {{ entity.confidence }}%
+  </li>
+</ol>
