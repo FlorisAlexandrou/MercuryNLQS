@@ -83,5 +83,17 @@ namespace Speech2TextPrototype.Controllers
             Entity[] resArray = result.ToArray();
             return resArray;
         }
+
+        [HttpGet]
+        [Route("text2speech/{text}")]
+        public async Task textToSpeechAsync(string text)
+        {
+            var config =
+                SpeechConfig.FromSubscription(
+                    "7e02a98e81db4d2ebcd09ec25472af3d",
+                    "eastus");
+            using var synthesizer = new SpeechSynthesizer(config);
+            await synthesizer.SpeakTextAsync(text);
+        }
     }
 }

@@ -17,12 +17,18 @@
 </ol>
 
 <span aria-live="polite">Question:</span>
-<input class="mr-1" type="text" [(ngModel)]="question" (keydown.enter)="getAnswer(question)"/>
+<input class="mr-1" type="text" [(ngModel)]="question" (keydown.enter)="getAnswer(question)" />
 <button class="btn btn-primary" (click)="getAnswer(question)">Ask!</button>
-<p [hidden]="!answer">Answer: {{ answer }}</p>
+<p [hidden]="!answer">{{ answer }}</p>
 
-<span [hidden]="prompts.length < 1">Options: </span> <ul>
+<span [hidden]="prompts.length < 1">Options: </span>
+<ul>
   <li *ngFor="let prompt of prompts">
     {{ prompt }}
   </li>
 </ul>
+
+<button (click)="textToSpeech(answer)">Speak!</button>
+<!--<button onclick="speak(answer)">Speak!</button>
+
+<script defer src="https://code.responsivevoice.org/responsivevoice.js?key=4cepEh6y"></script>-->

@@ -20,4 +20,8 @@ export class ApiService {
     public getAnswer(question: string):Observable<ResponseAnswer> {
         return this.httpClient.get(this.webUrl + this.apiUrl + "/" + question);
     }
+
+    public textToSpeech(text: string) {
+        return this.httpClient.get(this.webUrl + this.apiUrl + "/text2speech/" + text);
+    }
 }

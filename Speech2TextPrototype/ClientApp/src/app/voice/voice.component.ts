@@ -2,7 +2,6 @@ import { Component } from '@angular/core';
 import { ApiService } from '../api.service';
 import { Entity } from './LanguageInterface';
 
-
 @Component({
   selector: 'app-voice-component',
   templateUrl: './voice.component.html'
@@ -28,13 +27,21 @@ export class VoiceComponent {
 
 
     public getAnswer(question: string) {
+        this.answer = "Thinking...";
+        this.prompts = [];
         this.apiService.getAnswer(question).subscribe((res) => {
             console.log(res.answers[0]);
             this.answer = res.answers[0].answer;
-            this.prompts = [];
             for (let prompt of res.answers[0].context.prompts) {
                 this.prompts.push(prompt.displayText);
             }
         });
     }
+
+    public textToSpeech(text: string) {
+        this.apiService.textToSpeech(text).subscribe((res) => {
+            console.log(res);
+        });
+    }
+
 }
