@@ -1,6 +1,6 @@
-<h1>Speech To Text</h1>
+<h1>Ask anything!</h1>
 
-<button class="btn btn-primary" (click)="Speech2Text()">Press and speak</button>
+<!--<button class="btn btn-primary" (click)="Speech2Text()">Press and speak</button>
 
 <p aria-live="polite">Text: <strong>{{ resultText }}</strong></p>
 
@@ -14,11 +14,15 @@
     , Length: {{ entity.length }}
     , Confidence: {{ entity.confidence }}%
   </li>
-</ol>
+</ol>-->
 
 <span aria-live="polite">Question:</span>
 <input class="mr-1" type="text" [(ngModel)]="question" (keydown.enter)="getAnswer(question)" />
-<button class="btn btn-primary" (click)="getAnswer(question)">Ask!</button>
+<button class="btn btn-primary mr-1" (click)="getAnswer(question)">Ask!</button>
+<button id="speech" class="btn" (click)="Speech2Text()">
+  <i class="fa fa-microphone"></i>
+  <div [class.pulse-ring]="listening"></div>
+</button>
 <p [hidden]="!answer">{{ answer }}</p>
 
 <span [hidden]="prompts.length < 1">Options: </span>
@@ -27,8 +31,8 @@
     {{ prompt }}
   </li>
 </ul>
+<div [hidden]="!thinking" class="lds-facebook"><div></div><div></div><div></div></div>
 
-<button (click)="textToSpeech(answer)">Speak!</button>
-<!--<button onclick="speak(answer)">Speak!</button>
+<!--<button (click)="textToSpeech(answer)">Speak!</button>-->
 
-<script defer src="https://code.responsivevoice.org/responsivevoice.js?key=4cepEh6y"></script>-->
+Voice Output <input #voiceSwitch id="voiceSwitch" type="checkbox" data-toggle="switchbutton" [checked]="voiceOutput" (change)="onVoiceOutput(voiceSwitch.checked)">

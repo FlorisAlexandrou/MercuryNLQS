@@ -17,8 +17,8 @@ export class ApiService {
         return this.httpClient.get<Language>(this.webUrl + this.apiUrl);
     }
 
-    public getAnswer(question: string):Observable<ResponseAnswer> {
-        return this.httpClient.get(this.webUrl + this.apiUrl + "/" + question);
+    public getAnswer(question: string, voice: boolean):Observable<ResponseAnswer> {
+        return this.httpClient.get(this.webUrl + this.apiUrl + "/" + question + "?voice=" + voice);
     }
 
     public textToSpeech(text: string) {

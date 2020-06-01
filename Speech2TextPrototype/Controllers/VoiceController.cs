@@ -62,13 +62,17 @@ namespace Speech2TextPrototype.Controllers
         }
 
         [HttpGet("{question}")]
-        public QnASearchResultList GetQnA(string question)
+        public QnASearchResultList GetQnA(string question, bool voice)
         {
             var endpointhostName = "https://query-assistant.azurewebsites.net";
             var endpointKey = "3db47372-6124-4a27-89fe-0e43465e0d0c";
             string kbId = "9df255bc-67b5-4424-a60a-8f0438c23679";
             var runtimeClient = new QnAMakerRuntimeClient(new EndpointKeyServiceClientCredentials(endpointKey)) { RuntimeEndpoint = endpointhostName };
             var response = runtimeClient.Runtime.GenerateAnswerAsync(kbId, new QueryDTO { Question = question }).Result;
+            if (voice)
+            {
+                _ = textToSpeechAsync(response.Answers[0].Answer);
+            }
             return response;
         }
 

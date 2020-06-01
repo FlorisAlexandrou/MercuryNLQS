@@ -1,10 +1,12 @@
 import { Component } from '@angular/core';
 import { ApiService } from '../api.service';
 import { Entity } from './LanguageInterface';
+import { error } from '@angular/compiler/src/util';
 
 @Component({
   selector: 'app-voice-component',
-  templateUrl: './voice.component.html'
+  templateUrl: './voice.component.html',
+  styleUrls: ['./voice.component.scss']
 })
 export class VoiceComponent {
 
@@ -12,36 +14,56 @@ export class VoiceComponent {
     private entities: Entity[];
     private answer: string;
     private prompts: string[] = [];
+    private thinking: boolean = false;
+    private listening: boolean = false;
+    public voiceOutput: boolean = false;
+
+    private debug: boolean = false;
 
     constructor(private apiService: ApiService) { }
 
     public Speech2Text() {
+        this.listening = true;
         this.resultText = "Listening..."
         this.apiService.getText().subscribe((res) => {
             console.log(res);
             console.log(res.entities)
             this.resultText = res.text;
             this.entities = res.entities;
+            this.listening = false;
+            this.getAnswer(res.text);
         });
     }
 
 
     public getAnswer(question: string) {
-        this.answer = "Thinking...";
+        this.answer = "";
+        this.thinking = true;
         this.prompts = [];
-        this.apiService.getAnswer(question).subscribe((res) => {
+        this.apiService.getAnswer(question, this.voiceOutput).subscribe((res) => {
             console.log(res.answers[0]);
             this.answer = res.answers[0].answer;
-            for (let prompt of res.answers[0].context.prompts) {
-                this.prompts.push(prompt.displayText);
+            //if (this.voiceOutput)
+            //    this.textToSpeech(res.answers[0].answer);
+            if (res.answers[0].context) {
+                for (let prompt of res.answers[0].context.prompts) {
+                    this.prompts.push(prompt.displayText);
+                }
             }
+            this.thinking = false;
+        }, (error) => {
+            console.log(error);
+            this.thinking = false;
         });
     }
 
     public textToSpeech(text: string) {
         this.apiService.textToSpeech(text).subscribe((res) => {
-            console.log(res);
         });
+    }
+
+    public onVoiceOutput(value: boolean) {
+        this.voiceOutput = value;
     }
 
 }
