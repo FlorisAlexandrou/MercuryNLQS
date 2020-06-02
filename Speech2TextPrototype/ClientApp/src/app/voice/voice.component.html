@@ -2,7 +2,7 @@
 
 <!--<button class="btn btn-primary" (click)="Speech2Text()">Press and speak</button>
 
-<p aria-live="polite">Text: <strong>{{ resultText }}</strong></p>
+<p aria-live="polite">Text: <strong>{{ resultSpeech2Text }}</strong></p>-->
 
 <p aria-live="polite">Entities:</p>
 
@@ -14,10 +14,10 @@
     , Length: {{ entity.length }}
     , Confidence: {{ entity.confidence }}%
   </li>
-</ol>-->
+</ol>
 
 <span aria-live="polite">Question:</span>
-<input class="mr-1" type="text" [(ngModel)]="question" (keydown.enter)="getAnswer(question)" />
+<input class="mr-1" type="text" [(ngModel)]="question" (keydown.enter)="getAnswer(question)" [value]="resultSpeech2Text"/>
 <button class="btn btn-primary mr-1" (click)="getAnswer(question)">Ask!</button>
 <button id="speech" class="btn" (click)="Speech2Text()">
   <i class="fa fa-microphone"></i>
@@ -36,3 +36,5 @@
 <!--<button (click)="textToSpeech(answer)">Speak!</button>-->
 
 Voice Output <input #voiceSwitch id="voiceSwitch" type="checkbox" data-toggle="switchbutton" [checked]="voiceOutput" (change)="onVoiceOutput(voiceSwitch.checked)">
+
+<iframe src='https://webchat.botframework.com/embed/query-assistant-bot?s=SE5ZNHJdPrI.oSvlUmNyuS1scai7ZRUZNA8k-WkHjstNDJ_jmti-M70' style='min-width: 400px; width: 100%; min-height: 500px;'></iframe>

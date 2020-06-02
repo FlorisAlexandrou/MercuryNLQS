@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Language } from './voice/LanguageInterface';
+import { Language, Entity } from './voice/LanguageInterface';
 import { ResponseAnswer } from './voice/AnswerInterface';
 
 @Injectable({
@@ -19,6 +19,10 @@ export class ApiService {
 
     public getAnswer(question: string, voice: boolean):Observable<ResponseAnswer> {
         return this.httpClient.get(this.webUrl + this.apiUrl + "/" + question + "?voice=" + voice);
+    }
+
+    public getEntities(text: string):Observable<Entity[]> {
+        return this.httpClient.get<Entity[]>(this.webUrl + this.apiUrl + "/entity/" + text);
     }
 
     public textToSpeech(text: string) {

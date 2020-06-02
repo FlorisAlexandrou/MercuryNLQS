@@ -10,7 +10,7 @@ import { error } from '@angular/compiler/src/util';
 })
 export class VoiceComponent {
 
-    private resultText: string;
+    private resultSpeech2Text: string;
     private entities: Entity[];
     private answer: string;
     private prompts: string[] = [];
@@ -24,11 +24,9 @@ export class VoiceComponent {
 
     public Speech2Text() {
         this.listening = true;
-        this.resultText = "Listening..."
         this.apiService.getText().subscribe((res) => {
             console.log(res);
-            console.log(res.entities)
-            this.resultText = res.text;
+            this.resultSpeech2Text = res.text;
             this.entities = res.entities;
             this.listening = false;
             this.getAnswer(res.text);
@@ -40,11 +38,14 @@ export class VoiceComponent {
         this.answer = "";
         this.thinking = true;
         this.prompts = [];
+
+        this.apiService.getEntities(question).subscribe((res) => {
+            this.entities = res;
+        })
+
         this.apiService.getAnswer(question, this.voiceOutput).subscribe((res) => {
             console.log(res.answers[0]);
             this.answer = res.answers[0].answer;
-            //if (this.voiceOutput)
-            //    this.textToSpeech(res.answers[0].answer);
             if (res.answers[0].context) {
                 for (let prompt of res.answers[0].context.prompts) {
                     this.prompts.push(prompt.displayText);

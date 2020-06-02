@@ -40,8 +40,7 @@ namespace Speech2TextPrototype.Controllers
             {
                 case ResultReason.RecognizedSpeech:
                     text = result.Text;
-                    var client = new TextAnalyticsClient(endpoint, credentials);
-                    Entities = EntityRecognitionExample(client, result.Text);
+                    Entities = EntityRecognitionExample(result.Text);
                     break;
                 case ResultReason.NoMatch:
                     text = "Speech could not be recognized.";
@@ -76,8 +75,11 @@ namespace Speech2TextPrototype.Controllers
             return response;
         }
 
-        static Entity[] EntityRecognitionExample(TextAnalyticsClient client, String text)
+        [HttpGet]
+        [Route("entity/{text}")]
+        public Entity[] EntityRecognitionExample(String text)
         {
+            var client = new TextAnalyticsClient(endpoint, credentials);
             var response = client.RecognizeEntities(text);
             List<Entity> result = new List<Entity>();
             foreach (var entity in response.Value)
@@ -87,6 +89,7 @@ namespace Speech2TextPrototype.Controllers
             Entity[] resArray = result.ToArray();
             return resArray;
         }
+
 
         [HttpGet]
         [Route("text2speech/{text}")]
