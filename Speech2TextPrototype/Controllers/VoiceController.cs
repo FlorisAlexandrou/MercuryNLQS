@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Net.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Azure;
@@ -11,6 +12,9 @@ using Azure.AI.TextAnalytics;
 using Speech2TextPrototype.Models;
 using Microsoft.Azure.CognitiveServices.Knowledge.QnAMaker;
 using Microsoft.Azure.CognitiveServices.Knowledge.QnAMaker.Models;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+
 
 namespace Speech2TextPrototype.Controllers
 {
@@ -102,5 +106,29 @@ namespace Speech2TextPrototype.Controllers
             using var synthesizer = new SpeechSynthesizer(config);
             await synthesizer.SpeakTextAsync(text);
         }
+
+        [HttpGet]
+        [Route("tokenize/{text}")]
+        public async Task<PyRes> tokenize(string text)
+        {
+            var db = new DBController();
+            db.openClient();
+            string url = "https://tokens-api.herokuapp.com/tokenize/";
+            using (HttpClient client = new HttpClient())
+            {
+                var httpResponse = await client.GetStringAsync(url + text);
+                //var contentStream = await httpResponse.Content.ReadAsStreamAsync();
+                //var json = JObject.Parse(httpResponse);
+                PyRes res = JsonConvert.DeserializeObject<PyRes>(httpResponse);
+                string[] tokens = res.tokens;
+                foreach (string token in tokens)
+                {
+                    var listKnownTokens = db.tokenLookup(token);
+                }
+                db.closeClient();
+                return res;
+            }
+        }
+
     }
 }
