@@ -44,9 +44,7 @@ namespace Speech2TextPrototype.Controllers
                 List<string> listDates = new List<string>();
                 List<string> listDateValues = new List<string>();
                 List<string> listWhereStatements = new List<string>();
-
-                // Check for keywords Between or Past - Mabye can be implemented in Python
-                // TODO
+                bool isBetween = false;
 
                 // Lookup Bigrams
                 foreach (string bigram in bigrams)
@@ -99,9 +97,30 @@ namespace Speech2TextPrototype.Controllers
                     tokens = listTokens.ToArray();
                 }
 
+                int tokenIndex = 0;
+                string timeNum = "1";
+                string timeType = "";
                 // Lookup Tokens
                 foreach (string token in tokens)
                 {
+                    // Find Between Keyword
+                    if (token == "between")
+                        isBetween = true;
+
+                    if (token == "last" || token == "past")
+                    {
+                        // Only Accept 2-digit numbers so that it will not produce an error when query does not contain timeNum
+                        // Refine so that it accepts any number of digits, mabye check if token[tokenIndex+1] can be converted to INT or if it is in ['day','month','year']
+                        if (tokens[tokenIndex + 1].Length < 3)
+                        {
+                            timeNum = tokens[tokenIndex + 1];
+                            timeType = tokens[tokenIndex + 2];
+                        } else
+                        {
+                            timeType = tokens[tokenIndex + 1];
+                        }
+                    }
+                    
                     LookupValues lookupValues = _context.lookupvalues.Where(row => row.Value == token).FirstOrDefault();
                     if (lookupValues != null)
                     {
@@ -122,7 +141,9 @@ namespace Speech2TextPrototype.Controllers
                         }
                         listKnownTokens.Add(lookupValues);
                     }
+                    tokenIndex++;
                 }
+
                 // Query Construction
                 string query = "";
                 string measures = "";
@@ -131,8 +152,19 @@ namespace Speech2TextPrototype.Controllers
                 if (listMeasures.Any())
                     measures = listMeasures.Aggregate((i, j) => i + ", " + j);
 
-                if (listDates.Any())
+                // If dates are between a certain range
+                if (listDates.Any() && isBetween)
+                {
+                    wheres = listDates.Aggregate((i, j) => i.Split('=')[0] + "Between" + i.Split('=')[1] + " AND" + j.Split('=')[1]);
+                }
+                else if (listDates.Any())
                     wheres = listDates.Aggregate((i, j) => i + " OR " + j);
+
+                // If past,last keyword is detected
+                if (!String.IsNullOrEmpty(timeType))
+                {
+                    wheres += timeType + "(PERIOD_START) between (" + timeType + "(getdate()) - " + timeNum + ") and getdate()";
+                }
 
                 if (!String.IsNullOrEmpty(wheres))
                     wheres += " AND ";
