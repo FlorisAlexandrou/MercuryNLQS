@@ -23,126 +23,131 @@ namespace Speech2TextPrototype.Controllers
             _context = context;
         }
 
-        // GET: api/LookupValues
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<LookupValues>>> Getlookupvalues()
-        {
-            return await _context.lookupvalues.ToListAsync();
-        }
-
-        // GET: api/LookupValues/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<LookupValues>> GetLookupValues(string id)
-        {
-            var lookupValues = await _context.lookupvalues.FindAsync(id);
-
-            if (lookupValues == null)
-            {
-                return NotFound();
-            }
-
-            return lookupValues;
-        }
-
         [HttpGet]
         [Route("token/{text}")]
-        public async Task<List<LookupValues>> tokenLookupAsync(string text)
+        public async Task<string> tokenLookupAsync(string text)
         {
             string url = "https://tokens-api.herokuapp.com/tokenize/";
 
             using (HttpClient client = new HttpClient())
             {
+                // Tokenize Sentence
                 var httpResponse = await client.GetStringAsync(url + text);
                 PyRes res = JsonConvert.DeserializeObject<PyRes>(httpResponse);
+                /**************** IF IS SQL QUERY *******************/
                 string[] tokens = res.tokens;
+                string[] bigrams = res.bigrams;
 
                 List<LookupValues> listKnownTokens = new List<LookupValues>();
+                List<string> listMeasures = new List<string>();
+                List<string> listMeasureValues = new List<string>();
+                List<string> listDates = new List<string>();
+                List<string> listDateValues = new List<string>();
+                List<string> listWhereStatements = new List<string>();
+
+                // Check for keywords Between or Past - Mabye can be implemented in Python
+                // TODO
+
+                // Lookup Bigrams
+                foreach (string bigram in bigrams)
+                {
+                    LookupValues lookupValues = _context.lookupvalues.Where(row => row.Value == bigram).FirstOrDefault();
+                    if (lookupValues != null)
+                    {
+                        // Find Measurables
+                        if (lookupValues.Type == "Measure")
+                        {
+                            listMeasures.Add(lookupValues.WhereStmt);
+                            listMeasureValues.Add(lookupValues.Value);
+                        }
+                        // Find WhereStmts
+                        else if (lookupValues.Type == "Date")
+                        {
+                            listDates.Add(lookupValues.WhereStmt);
+                            listDateValues.Add(lookupValues.Value);
+                        }
+                    }
+                }
+
+                // Delete Tokens identified as known bigrams
+                if (listMeasures.Any() || listDates.Any())
+                {
+                    var listTokens = new List<string>(tokens);
+
+                    for (int i = listTokens.Count - 1; i >= 0; i--)
+                    {
+                        // Delete measures - tokens
+                        foreach (string measure in listMeasureValues)
+                        {
+                            if (measure.Contains(listTokens[i], StringComparison.OrdinalIgnoreCase))
+                            {
+                                listTokens.RemoveAt(i);
+                                break;
+                            }
+                        }
+
+                        // Delete dates - tokens
+                        foreach (string date in listDateValues)
+                        {
+                            if (date.Contains(listTokens[i], StringComparison.OrdinalIgnoreCase))
+                            {
+                                listTokens.RemoveAt(i);
+                                break;
+                            }
+                        }
+                    }
+                    tokens = listTokens.ToArray();
+                }
+
+                // Lookup Tokens
                 foreach (string token in tokens)
                 {
                     LookupValues lookupValues = _context.lookupvalues.Where(row => row.Value == token).FirstOrDefault();
-                    listKnownTokens.Add(lookupValues);
+                    if (lookupValues != null)
+                    {
+                        // Find Measurables
+                        if (lookupValues.Type == "Measure")
+                        {
+                            listMeasures.Add(lookupValues.WhereStmt);
+                        }
+                        // Find WhereStmts
+                        else if (lookupValues.Type == "Date")
+                        {
+                            listDates.Add(lookupValues.WhereStmt);
+                        }
+                        else
+                        {
+                            string statement = lookupValues.WhereStmt + " = " + "'" + lookupValues.Value + "'";
+                            listWhereStatements.Add(statement);
+                        }
+                        listKnownTokens.Add(lookupValues);
+                    }
                 }
-                return listKnownTokens;
-            }
-        }
+                // Query Construction
+                string query = "";
+                string measures = "";
+                string wheres = "";
 
-        // PUT: api/LookupValues/5
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for
-        // more details see https://aka.ms/RazorPagesCRUD.
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutLookupValues(string id, LookupValues lookupValues)
-        {
-            if (id != lookupValues.Value)
-            {
-                return BadRequest();
-            }
+                if (listMeasures.Any())
+                    measures = listMeasures.Aggregate((i, j) => i + ", " + j);
 
-            _context.Entry(lookupValues).State = EntityState.Modified;
+                if (listDates.Any())
+                    wheres = listDates.Aggregate((i, j) => i + " OR " + j);
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!LookupValuesExists(id))
-                {
-                    return NotFound();
-                }
+                if (!String.IsNullOrEmpty(wheres))
+                    wheres += " AND ";
+                wheres += listWhereStatements.Aggregate((i, j) => i + " AND " + j);
+
+                if (String.IsNullOrEmpty(wheres))
+                    query = "SELECT " + measures + " FROM TDATA";
                 else
-                {
-                    throw;
-                }
+                    query = "SELECT " + measures + " FROM TDATA WHERE " + wheres;
+
+                return query;
+                var q = _context.tdata.
+                    FromSqlRaw("SELECT " + listMeasures[0] + " FROM TData WHERE " + listWhereStatements[0]).ToList();
+                //return listKnownTokens;
             }
-
-            return NoContent();
-        }
-
-        // POST: api/LookupValues
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for
-        // more details see https://aka.ms/RazorPagesCRUD.
-        [HttpPost]
-        public async Task<ActionResult<LookupValues>> PostLookupValues(LookupValues lookupValues)
-        {
-            _context.lookupvalues.Add(lookupValues);
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateException)
-            {
-                if (LookupValuesExists(lookupValues.Value))
-                {
-                    return Conflict();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return CreatedAtAction("GetLookupValues", new { id = lookupValues.Value }, lookupValues);
-        }
-
-        // DELETE: api/LookupValues/5
-        [HttpDelete("{id}")]
-        public async Task<ActionResult<LookupValues>> DeleteLookupValues(string id)
-        {
-            var lookupValues = await _context.lookupvalues.FindAsync(id);
-            if (lookupValues == null)
-            {
-                return NotFound();
-            }
-
-            _context.lookupvalues.Remove(lookupValues);
-            await _context.SaveChangesAsync();
-
-            return lookupValues;
-        }
-
-        private bool LookupValuesExists(string id)
-        {
-            return _context.lookupvalues.Any(e => e.Value == id);
         }
     }
 }

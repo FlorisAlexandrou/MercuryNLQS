@@ -12,9 +12,6 @@ using Azure.AI.TextAnalytics;
 using Speech2TextPrototype.Models;
 using Microsoft.Azure.CognitiveServices.Knowledge.QnAMaker;
 using Microsoft.Azure.CognitiveServices.Knowledge.QnAMaker.Models;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
-using Speech2TextPrototype.Data;
 
 namespace Speech2TextPrototype.Controllers
 {
@@ -106,30 +103,5 @@ namespace Speech2TextPrototype.Controllers
             using var synthesizer = new SpeechSynthesizer(config);
             await synthesizer.SpeakTextAsync(text);
         }
-
-
-        //[HttpGet]
-        //[Route("tokenize/{text}")]
-        //public async Task<List<List<string[]>>> tokenize(string text)
-        //{
-        //    string url = "https://tokens-api.herokuapp.com/tokenize/";
-        //    using (HttpClient client = new HttpClient())
-        //    {
-        //        var httpResponse = await client.GetStringAsync(url + text);
-        //        //var contentStream = await httpResponse.Content.ReadAsStreamAsync();
-        //        //var json = JObject.Parse(httpResponse);
-        //        PyRes res = JsonConvert.DeserializeObject<PyRes>(httpResponse);
-        //        string[] tokens = res.tokens;
-        //        List<List<string[]>> listKnownTokens = new List<List<string[]>>();
-        //        List<List<LookupValues>> listKnownTokens2 = new List<List<LookupValues>>();
-        //        foreach (string token in tokens)
-        //        {
-        //            listKnownTokens2.Add(lvc.tokenLookupAsync(token));
-        //            listKnownTokens.Add(db.tokenLookup(token));
-        //        }
-        //        return listKnownTokens;
-        //    }
-        //}
-
     }
 }
