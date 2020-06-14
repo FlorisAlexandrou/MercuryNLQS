@@ -44,6 +44,10 @@ namespace Speech2TextPrototype.Controllers
                 List<string> listDates = new List<string>();
                 List<string> listDateValues = new List<string>();
                 List<string> listWhereStatements = new List<string>();
+                // SUM, MAX, MIN, COUNT, AVG
+                string aggregateFunction = "";
+                string[] aggregates = {"max", "min", "sum", "count", "avg"};
+                string[] aggAltertnatives = { "maximum", "minimum", "total", "number", "average" };
                 bool isBetween = false;
 
                 // Lookup Bigrams
@@ -110,7 +114,7 @@ namespace Speech2TextPrototype.Controllers
                     if (token == "last" || token == "past")
                     {
                         // Only Accept 2-digit numbers so that it will not produce an error when query does not contain timeNum
-                        // Refine so that it accepts any number of digits, mabye check if token[tokenIndex+1] can be converted to INT or if it is in ['day','month','year']
+                        // Refine so that it accepts any number of digits, mabye check if token[tokenIndex+1] can be converted to INT or if it is    in ['day','month','year']
                         if (tokens[tokenIndex + 1].Length < 3)
                         {
                             timeNum = tokens[tokenIndex + 1];
@@ -119,6 +123,13 @@ namespace Speech2TextPrototype.Controllers
                         {
                             timeType = tokens[tokenIndex + 1];
                         }
+                    }
+
+                    // Check for aggregates
+                    for (int i = 0; i < aggregates.Length; i++)
+                    {
+                        if (aggregates[i] == token || aggAltertnatives[i] == token)
+                            aggregateFunction = aggregates[i];
                     }
                     
                     LookupValues lookupValues = _context.lookupvalues.Where(row => row.Value == token).FirstOrDefault();
@@ -150,7 +161,16 @@ namespace Speech2TextPrototype.Controllers
                 string wheres = "";
 
                 if (listMeasures.Any())
+                {
                     measures = listMeasures.Aggregate((i, j) => i + ", " + j);
+
+                    // Add aggregate function
+                    if (!String.IsNullOrEmpty(aggregateFunction))
+                    {
+                        measures = measures.Insert(0, aggregateFunction.ToUpper() + "(");
+                        measures += ")";
+                    }
+                }
 
                 // If dates are between a certain range
                 if (listDates.Any() && isBetween)
@@ -166,10 +186,12 @@ namespace Speech2TextPrototype.Controllers
                     wheres += timeType + "(PERIOD_START) between (" + timeType + "(getdate()) - " + timeNum + ") and getdate()";
                 }
 
+                // Add the rest of the "where" Statements
                 if (!String.IsNullOrEmpty(wheres))
                     wheres += " AND ";
                 wheres += listWhereStatements.Aggregate((i, j) => i + " AND " + j);
 
+                // Construct Query
                 if (String.IsNullOrEmpty(wheres))
                     query = "SELECT " + measures + " FROM TDATA";
                 else
