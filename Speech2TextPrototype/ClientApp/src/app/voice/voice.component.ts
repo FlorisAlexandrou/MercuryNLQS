@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { ApiService } from '../api.service';
-import { Entity } from './LanguageInterface';
+import { SalesValue } from './AnswerInterface'
 import { error } from '@angular/compiler/src/util';
 
 @Component({
@@ -11,11 +11,11 @@ import { error } from '@angular/compiler/src/util';
 export class VoiceComponent {
 
     private resultSpeech2Text: string;
-    private entities: Entity[];
     private answer: string;
     private prompts: string[] = [];
     private thinking: boolean = false;
     private listening: boolean = false;
+    private queryResult: SalesValue[];
     public voiceOutput: boolean = false;
 
     private debug: boolean = false;
@@ -26,30 +26,31 @@ export class VoiceComponent {
         this.listening = true;
         this.apiService.getText().subscribe((res) => {
             console.log(res);
-            this.resultSpeech2Text = res.text;
-            this.entities = res.entities;
+            this.resultSpeech2Text = res
             this.listening = false;
-            this.getAnswer(res.text);
+            this.getAnswer(res);
         });
     }
 
 
     public getAnswer(question: string) {
         this.answer = "";
+        this.queryResult = [];
         this.thinking = true;
         this.prompts = [];
 
-        this.apiService.getEntities(question).subscribe((res) => {
-            this.entities = res;
-        })
-
         this.apiService.getAnswer(question, this.voiceOutput).subscribe((res) => {
-            console.log(res.answers[0]);
-            this.answer = res.answers[0].answer;
-            if (res.answers[0].context) {
-                for (let prompt of res.answers[0].context.prompts) {
-                    this.prompts.push(prompt.displayText);
+            if (res.qna.answers) {
+                this.answer = res.qna.answers[0].answer;
+                if (res.qna.answers[0].context) {
+                    for (let prompt of res.qna.answers[0].context.prompts) {
+                        this.prompts.push(prompt.displayText);
+                    }
                 }
+            }
+            else {
+                this.queryResult = res.queryResult;
+                this.answer = "Showing the first 10 results"
             }
             this.thinking = false;
         }, (error) => {

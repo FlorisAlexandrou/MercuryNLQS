@@ -12,36 +12,41 @@ using Azure.AI.TextAnalytics;
 using Speech2TextPrototype.Models;
 using Microsoft.Azure.CognitiveServices.Knowledge.QnAMaker;
 using Microsoft.Azure.CognitiveServices.Knowledge.QnAMaker.Models;
+using Speech2TextPrototype.Data;
+using Newtonsoft.Json;
 
 namespace Speech2TextPrototype.Controllers
 {
 
     [Route("api/[controller]")]
     [ApiController]
+    [Produces("application/json")]
     public class VoiceController : ControllerBase
     {
         private static readonly AzureKeyCredential credentials = new AzureKeyCredential("a80f6dfc55004cc9a3b49af55826c3c2");
         private static readonly Uri endpoint = new Uri("https://floris-textanalytics.cognitiveservices.azure.com/");
-        // GET: api/Voice
-        [HttpGet]
-        public async Task<ActionResult<Language>> GetAsync()
-        {
-            var config =
-                SpeechConfig.FromSubscription(
+        private static readonly SpeechConfig speechConfig = SpeechConfig.FromSubscription(
                     "7e02a98e81db4d2ebcd09ec25472af3d",
                     "eastus");
+        private LookupValuesController _lvc;
 
-            using var recognizer = new SpeechRecognizer(config);
+        public VoiceController(Controllers.LookupValuesController lvc)
+        {
+            _lvc = lvc;
+            Console.WriteLine(_lvc);
+        }
 
+        // GET: api/Voice
+        [HttpGet]
+        public async Task<ActionResult> GetAsync()
+        {
+            using var recognizer = new SpeechRecognizer(speechConfig);
             string text = "";
-            Entity[] Entities = { };
-
             var result = await recognizer.RecognizeOnceAsync();
             switch (result.Reason)
             {
                 case ResultReason.RecognizedSpeech:
                     text = result.Text;
-                    Entities = EntityRecognitionExample(result.Text);
                     break;
                 case ResultReason.NoMatch:
                     text = "Speech could not be recognized.";
@@ -55,18 +60,39 @@ namespace Speech2TextPrototype.Controllers
                     }
                     break;
             }
-
-            return Ok(new Language() { text = text, entities = Entities });
-
-            //return test;
+            return Ok(text);
         }
 
-        [HttpGet("{question}")]
+
+        [HttpGet]
+        [Route("token/{sentence}")]
+        public async Task<IActionResult> Test(string sentence)
+        {
+            string url = "https://tokens-api.herokuapp.com/tokenize/";
+            string query = "";
+            List<Data.SalesValue> queryResult = new List<SalesValue>();
+            QnASearchResultList qna = new QnASearchResultList();
+            using (HttpClient client = new HttpClient())
+            {
+                // Tokenize Sentence
+                var httpResponse = await client.GetStringAsync(url + sentence);
+                PyRes res = JsonConvert.DeserializeObject<PyRes>(httpResponse);
+                // Return either a table or a bot answer
+                if (res.isSqlQuery)
+                   queryResult = _lvc.tokenLookup(res);
+                else
+                    qna = GetQnA(sentence, false);
+                return Ok(new { queryResult, qna });
+            }
+        }
+
+        [HttpGet]
+        [Route("qna/{question}")]
         public QnASearchResultList GetQnA(string question, bool voice)
         {
             var endpointhostName = "https://query-assistant.azurewebsites.net";
-            var endpointKey = "3db47372-6124-4a27-89fe-0e43465e0d0c";
-            string kbId = "9df255bc-67b5-4424-a60a-8f0438c23679";
+            var endpointKey = "4c627627-04b6-4439-9969-87e92e45fe64";
+            string kbId = "17d474de-7b95-4035-bfe0-c78fee641eaf";
             var runtimeClient = new QnAMakerRuntimeClient(new EndpointKeyServiceClientCredentials(endpointKey)) { RuntimeEndpoint = endpointhostName };
             var response = runtimeClient.Runtime.GenerateAnswerAsync(kbId, new QueryDTO { Question = question }).Result;
             if (voice)
@@ -77,30 +103,10 @@ namespace Speech2TextPrototype.Controllers
         }
 
         [HttpGet]
-        [Route("entity/{text}")]
-        public Entity[] EntityRecognitionExample(String text)
-        {
-            var client = new TextAnalyticsClient(endpoint, credentials);
-            var response = client.RecognizeEntities(text);
-            List<Entity> result = new List<Entity>();
-            foreach (var entity in response.Value)
-            {
-                result.Add(new Entity(entity.Text, entity.Category.ToString(), entity.SubCategory, entity.Text.Length, entity.ConfidenceScore));
-            }
-            Entity[] resArray = result.ToArray();
-            return resArray;
-        }
-
-
-        [HttpGet]
         [Route("text2speech/{text}")]
         public async Task textToSpeechAsync(string text)
         {
-            var config =
-                SpeechConfig.FromSubscription(
-                    "7e02a98e81db4d2ebcd09ec25472af3d",
-                    "eastus");
-            using var synthesizer = new SpeechSynthesizer(config);
+            using var synthesizer = new SpeechSynthesizer(speechConfig);
             await synthesizer.SpeakTextAsync(text);
         }
     }

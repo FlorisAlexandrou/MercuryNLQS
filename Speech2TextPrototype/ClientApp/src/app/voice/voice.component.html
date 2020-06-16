@@ -1,21 +1,5 @@
 <h1>Ask anything!</h1>
 
-<!--<button class="btn btn-primary" (click)="Speech2Text()">Press and speak</button>
-
-<p aria-live="polite">Text: <strong>{{ resultSpeech2Text }}</strong></p>-->
-
-<p aria-live="polite">Entities:</p>
-
-<ol>
-  <li *ngFor="let entity of entities">
-    Word: {{ entity.text }}
-    , Category: {{ entity.category }}
-    , SubCategory: {{ entity.subcategory }}
-    , Length: {{ entity.length }}
-    , Confidence: {{ entity.confidence }}%
-  </li>
-</ol>
-
 <span aria-live="polite">Question:</span>
 <input class="mr-1" type="text" [(ngModel)]="question" (keydown.enter)="getAnswer(question)" [value]="resultSpeech2Text"/>
 <button class="btn btn-primary mr-1" (click)="getAnswer(question)">Ask!</button>
@@ -24,6 +8,12 @@
   <div [class.pulse-ring]="listening"></div>
 </button>
 <p [hidden]="!answer">{{ answer }}</p>
+<ul>
+  <li *ngFor="let row of (queryResult ? queryResult.slice(0,10): [])"
+      style="text-decoration: none;">
+    {{ row.m_SALES_VALUE }}
+  </li>
+</ul>
 
 <span [hidden]="prompts.length < 1">Options: </span>
 <ul>

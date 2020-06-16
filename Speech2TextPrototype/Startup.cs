@@ -31,6 +31,8 @@ namespace Speech2TextPrototype
             {
                 configuration.RootPath = "ClientApp/dist";
             });
+
+            services.AddTransient<Controllers.LookupValuesController, Controllers.LookupValuesController>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -13,6 +13,7 @@ namespace Speech2TextPrototype
     {
         public static void Main(string[] args)
         {
+            Console.WriteLine("alo");
             CreateHostBuilder(args).Build().Run();
         }
 

@@ -1,5 +1,14 @@
 export interface ResponseAnswer {
-    answers?: Answer[];
+    qna?: qna;
+    queryResult?: SalesValue[];
+}
+
+export interface SalesValue {
+    m_SALES_VALUE: number;
+}
+
+interface qna {
+    answers: Answer[];
 }
 
  interface Answer {
