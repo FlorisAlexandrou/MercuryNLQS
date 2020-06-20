@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, IterableDiffers, Pipe, PipeTransform } from '@angular/core';
 import { ApiService } from '../api.service';
-import { SalesValue } from './AnswerInterface'
+import { TData } from './AnswerInterface'
 import { error } from '@angular/compiler/src/util';
 
 @Component({
@@ -15,7 +15,7 @@ export class VoiceComponent {
     private prompts: string[] = [];
     private thinking: boolean = false;
     private listening: boolean = false;
-    private queryResult: SalesValue[];
+    private queryResult: TData[];
     public voiceOutput: boolean = false;
 
     private debug: boolean = false;

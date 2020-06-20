@@ -70,8 +70,9 @@ namespace Speech2TextPrototype.Controllers
         {
             string url = "https://tokens-api.herokuapp.com/tokenize/";
             string query = "";
-            List<Data.SalesValue> queryResult = new List<SalesValue>();
+            List<TData> queryResult = new List<TData>();
             QnASearchResultList qna = new QnASearchResultList();
+            List<string> listMeasures = new List<string>();
             using (HttpClient client = new HttpClient())
             {
                 // Tokenize Sentence
@@ -79,10 +80,10 @@ namespace Speech2TextPrototype.Controllers
                 PyRes res = JsonConvert.DeserializeObject<PyRes>(httpResponse);
                 // Return either a table or a bot answer
                 if (res.isSqlQuery)
-                   queryResult = _lvc.tokenLookup(res);
+                   (queryResult, listMeasures) = _lvc.tokenLookup(res);
                 else
                     qna = GetQnA(sentence, false);
-                return Ok(new { queryResult, qna });
+                return Ok(new { queryResult, listMeasures, qna });
             }
         }
 

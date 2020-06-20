@@ -1,30 +1,48 @@
 <h1>Ask anything!</h1>
 
 <span aria-live="polite">Question:</span>
-<input class="mr-1" type="text" [(ngModel)]="question" (keydown.enter)="getAnswer(question)" [value]="resultSpeech2Text"/>
+<input class="mr-1" type="text" [(ngModel)]="question" (keydown.enter)="getAnswer(question)" [value]="resultSpeech2Text" />
 <button class="btn btn-primary mr-1" (click)="getAnswer(question)">Ask!</button>
 <button id="speech" class="btn" (click)="Speech2Text()">
   <i class="fa fa-microphone"></i>
   <div [class.pulse-ring]="listening"></div>
 </button>
 <p [hidden]="!answer">{{ answer }}</p>
-<ul>
-  <li *ngFor="let row of (queryResult ? queryResult.slice(0,10): [])"
-      style="text-decoration: none;">
-    {{ row.m_SALES_VALUE }}
-  </li>
-</ul>
+<table *ngIf="queryResult" class="table table-striped">
+  <thead>
+    <tr>
+      <th>Brand</th>
+      <th>Category Name</th>
+      <th>Period Start</th>
+      <th>Sales</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let row of (queryResult ? queryResult.slice(0,10): [])">
+      <td>{{ row.brand }}</td>
+      <td>{{ row.categorY_NAME }}</td>
+      <td>{{ row.perioD_START }}</td>
+      <td>{{ row.m_SALES_VALUE }}</td>
+    </tr>
+  </tbody>
+  </table>
+  <ul>
+    <li *ngFor="let row of (queryResult ? queryResult.slice(0,10): [])"
+        style="text-decoration: none;">
+      {{ row.brand }}
+    </li>
+  </ul>
 
-<span [hidden]="prompts.length < 1">Options: </span>
-<ul>
-  <li *ngFor="let prompt of prompts">
-    {{ prompt }}
-  </li>
-</ul>
-<div [hidden]="!thinking" class="lds-facebook"><div></div><div></div><div></div></div>
+  <span [hidden]="prompts.length < 1">Options: </span>
+  <ul>
+    <li *ngFor="let prompt of prompts">
+      {{ prompt }}
+    </li>
+  </ul>
+  <div [hidden]="!thinking" class="lds-facebook"><div></div><div></div><div></div></div>
 
-<!--<button (click)="textToSpeech(answer)">Speak!</button>-->
+  <!--<button (click)="textToSpeech(answer)">Speak!</button>-->
+  Voice Output
+  <input #voiceSwitch id="voiceSwitch" type="checkbox" data-toggle="switchbutton" [checked]="voiceOutput" (change)="onVoiceOutput(voiceSwitch.checked)">
 
-Voice Output <input #voiceSwitch id="voiceSwitch" type="checkbox" data-toggle="switchbutton" [checked]="voiceOutput" (change)="onVoiceOutput(voiceSwitch.checked)">
-
-<iframe src='https://webchat.botframework.com/embed/query-assistant-bot?s=SE5ZNHJdPrI.oSvlUmNyuS1scai7ZRUZNA8k-WkHjstNDJ_jmti-M70' style='min-width: 400px; width: 100%; min-height: 500px;'></iframe>
+  <iframe src='https://webchat.botframework.com/embed/query-assistant-bot?s=SE5ZNHJdPrI.oSvlUmNyuS1scai7ZRUZNA8k-WkHjstNDJ_jmti-M70' style='min-width: 400px; width: 100%; min-height: 500px;'></iframe>

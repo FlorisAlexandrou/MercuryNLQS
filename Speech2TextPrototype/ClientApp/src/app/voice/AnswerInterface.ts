@@ -1,10 +1,36 @@
 export interface ResponseAnswer {
     qna?: qna;
-    queryResult?: SalesValue[];
+    queryResult?: TData[];
+    listMeasures?: string[];
 }
 
 export interface SalesValue {
     m_SALES_VALUE: number;
+}
+
+export interface TData {
+    tid: number;
+    quanitity: number;
+    price: number;
+    categorY_ID: number;
+    uniT_MEASUREMENT: string;
+    producT_ID: number;
+    product_NAME: string;
+    brand: string;
+    size: number;
+    sizE_DETAILS: string;
+    perioD_ID: number;
+    perioD_START: Date;
+    perioD_END: Date;
+    outleT_ID: number;
+    outleT_NAME: string;
+    outleT_TYPE_ID: number;
+    outleT_TYPE_NAME: string;
+    areA_ID: number;
+    areA_NAME: string;
+    m_SALES_ITEMS: number;
+    m_SALES_VALUE: number;
+    m_SALES_VOLUME: number;
 }
 
 interface qna {

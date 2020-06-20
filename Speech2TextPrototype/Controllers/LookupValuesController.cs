@@ -211,7 +211,7 @@ namespace Speech2TextPrototype.Controllers
         /**************************************************************************/
         /************************************SECOND********************************/
         /**************************************************************************/
-        public List<Data.SalesValue> tokenLookup(PyRes res)
+        public (List<TData>, List<string>) tokenLookup(PyRes res)
         {
             string[] tokens = res.tokens;
             string[] bigrams = res.bigrams;
@@ -287,11 +287,14 @@ namespace Speech2TextPrototype.Controllers
             {
                 // Find Between Keyword
                 if (token == "between")
+                {
                     isBetween = true;
+                    continue;
+                }
 
                 if (token == "last" || token == "past")
                 {
-                    // Only Accept 2-digit numbers so that it will not produce an error when query does not contain timeNum
+                    // Only Accept 2-digit numbers so that it will not produce an error when query does not contain timeNum "Past Month"
                     // Refine so that it accepts any number of digits, mabye check if token[tokenIndex+1] can be converted to INT or if it is    in ['day','month','year']
                     if (tokens[tokenIndex + 1].Length < 3)
                     {
@@ -302,13 +305,17 @@ namespace Speech2TextPrototype.Controllers
                     {
                         timeType = tokens[tokenIndex + 1];
                     }
+                    continue;
                 }
 
                 // Check for aggregates
                 for (int i = 0; i < aggregates.Length; i++)
                 {
                     if (aggregates[i] == token || aggAltertnatives[i] == token)
+                    {
                         aggregateFunction = aggregates[i];
+                        break;
+                    }
                 }
 
                 LookupValues lookupValues = _context.lookupvalues.Where(row => row.Value == token).FirstOrDefault();
@@ -351,19 +358,55 @@ namespace Speech2TextPrototype.Controllers
                 }
             }
 
-            // If dates are between a certain range
-            if (listDates.Any() && isBetween)
-            {
-                wheres = listDates.Aggregate((i, j) => i.Split('=')[0] + "Between" + i.Split('=')[1] + " AND" + j.Split('=')[1]);
-            }
-            else if (listDates.Any())
-                wheres = listDates.Aggregate((i, j) => i + " OR " + j);
-
             // If past,last keyword is detected
             if (!String.IsNullOrEmpty(timeType))
             {
-                wheres += timeType + "(PERIOD_START) between (" + timeType + "(getdate()) - " + timeNum + ") and getdate()";
+                // Display last months or days of current year
+                if ((timeType == "month" || timeType == "day") && !listDates.Any())
+                {
+                    wheres += timeType + "(PERIOD_START) between (" + timeType + "(getdate()) - " + timeNum + ") and getdate() and YEAR(PERIOD_START) = YEAR(getdate())";
+                }
+                // Display last months or days of specific year, e.g last 2 months of 2016
+                else
+                {
+                    var year = listDates[0].Split('=')[1].Replace(" ", "");
+
+                    if (timeType == "month")
+                    {
+                        var monthDiff = 12 - Int32.Parse(timeNum);
+                        string month = monthDiff.ToString();
+                        if (monthDiff >= 1 && monthDiff <= 9)
+                        {
+                            month = "0" + month;
+                        }
+                        wheres += "CONVERT(VARCHAR(10), PERIOD_START) between '" + year + "-" + month + "-01' and '" + year + "-12-31'";
+                    }
+                    else if (timeType == "day")
+                    {
+                        var dayDiff = 31 - Int32.Parse(timeNum);
+                        string day = dayDiff.ToString();
+                        if (dayDiff >= 1 && dayDiff <= 9)
+                        {
+                            day = "0" + day;
+                        }
+                        wheres += "CONVERT(VARCHAR(10), PERIOD_START) between '" + year + "-12-" + dayDiff + "' and '" + year + "-12-31'";
+                    }
+                }
             }
+
+            // If dates are BETWEEN a certain range
+            else if (listDates.Any() && isBetween)
+            {
+                wheres += listDates.Aggregate((i, j) => i.Split('=')[0] + "Between" + i.Split('=')[1] + " AND" + j.Split('=')[1]);
+            }
+            else if (listDates.Any())
+            {
+                if (!String.IsNullOrEmpty(wheres))
+                    wheres += " AND ";
+                wheres += listDates.Aggregate((i, j) => i + " OR " + j);
+
+            }
+
 
             // Add the rest of the "where" Statements
             if (listWhereStatements.Any())
@@ -374,13 +417,13 @@ namespace Speech2TextPrototype.Controllers
             }
             // Construct Query
             if (String.IsNullOrEmpty(wheres))
-                query = "SELECT " + measures + " AS M_SALES_VALUE FROM TDATA";
+                query = "SELECT * FROM TDATA";
             else
-                query = "SELECT " + measures + " AS M_SALES_VALUE FROM TDATA WHERE " + wheres;
+                query = "SELECT * FROM TDATA WHERE " + wheres;
 
-            var result = _context.salesvalue.FromSqlRaw(query).ToList();
+            var result = _context.tdata.FromSqlRaw(query).ToList();
 
-            return result;
+            return (result, listMeasures);
         }
     }
 }
