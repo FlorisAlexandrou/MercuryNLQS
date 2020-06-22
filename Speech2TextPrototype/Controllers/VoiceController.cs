@@ -80,10 +80,10 @@ namespace Speech2TextPrototype.Controllers
                 PyRes res = JsonConvert.DeserializeObject<PyRes>(httpResponse);
                 // Return either a table or a bot answer
                 if (res.isSqlQuery)
-                   (queryResult, listMeasures) = _lvc.tokenLookup(res);
+                   (queryResult, listMeasures, query) = _lvc.token2Sql(res);
                 else
                     qna = GetQnA(sentence, false);
-                return Ok(new { queryResult, listMeasures, qna });
+                return Ok(new { queryResult, listMeasures, qna, query });
             }
         }
 

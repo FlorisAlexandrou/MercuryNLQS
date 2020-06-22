@@ -2,6 +2,7 @@ export interface ResponseAnswer {
     qna?: qna;
     queryResult?: TData[];
     listMeasures?: string[];
+    query?: string;
 }
 
 export interface SalesValue {

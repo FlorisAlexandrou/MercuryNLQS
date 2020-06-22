@@ -8,7 +8,8 @@
   <div [class.pulse-ring]="listening"></div>
 </button>
 <p [hidden]="!answer">{{ answer }}</p>
-<table *ngIf="queryResult" class="table table-striped">
+
+<table *ngIf="queryResult.length" class="table table-striped">
   <thead>
     <tr>
       <th>Brand</th>
@@ -26,12 +27,6 @@
     </tr>
   </tbody>
   </table>
-  <ul>
-    <li *ngFor="let row of (queryResult ? queryResult.slice(0,10): [])"
-        style="text-decoration: none;">
-      {{ row.brand }}
-    </li>
-  </ul>
 
   <span [hidden]="prompts.length < 1">Options: </span>
   <ul>
@@ -41,7 +36,6 @@
   </ul>
   <div [hidden]="!thinking" class="lds-facebook"><div></div><div></div><div></div></div>
 
-  <!--<button (click)="textToSpeech(answer)">Speak!</button>-->
   Voice Output
   <input #voiceSwitch id="voiceSwitch" type="checkbox" data-toggle="switchbutton" [checked]="voiceOutput" (change)="onVoiceOutput(voiceSwitch.checked)">
 

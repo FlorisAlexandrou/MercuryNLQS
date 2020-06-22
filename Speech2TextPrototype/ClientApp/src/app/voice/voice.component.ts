@@ -15,7 +15,7 @@ export class VoiceComponent {
     private prompts: string[] = [];
     private thinking: boolean = false;
     private listening: boolean = false;
-    private queryResult: TData[];
+    private queryResult: TData[] = [];
     public voiceOutput: boolean = false;
 
     private debug: boolean = false;
@@ -35,10 +35,9 @@ export class VoiceComponent {
 
     public getAnswer(question: string) {
         this.answer = "";
-        this.queryResult = [];
         this.thinking = true;
         this.prompts = [];
-
+        this.queryResult = [];
         this.apiService.getAnswer(question, this.voiceOutput).subscribe((res) => {
             if (res.qna.answers) {
                 this.answer = res.qna.answers[0].answer;
@@ -49,6 +48,9 @@ export class VoiceComponent {
                 }
             }
             else {
+                console.log('query: ' + res.query);
+                console.log(res.listMeasures);
+                console.log(res.queryResult);
                 this.queryResult = res.queryResult;
                 this.answer = "Showing the first 10 results"
             }
