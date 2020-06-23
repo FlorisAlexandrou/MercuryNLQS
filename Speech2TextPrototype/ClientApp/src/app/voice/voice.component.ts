@@ -1,7 +1,11 @@
-import { Component, IterableDiffers, Pipe, PipeTransform } from '@angular/core';
+import { Component, IterableDiffers, Pipe, PipeTransform, NgZone } from '@angular/core';
 import { ApiService } from '../api.service';
 import { TData } from './AnswerInterface'
-import { error } from '@angular/compiler/src/util';
+import * as am4core from "@amcharts/amcharts4/core";
+import * as am4charts from "@amcharts/amcharts4/charts";
+import am4themes_animated from "@amcharts/amcharts4/themes/animated";
+
+am4core.useTheme(am4themes_animated);
 
 @Component({
   selector: 'app-voice-component',
@@ -20,7 +24,9 @@ export class VoiceComponent {
 
     private debug: boolean = false;
 
-    constructor(private apiService: ApiService) { }
+    private chart: am4charts.XYChart;
+
+    constructor(private apiService: ApiService, private zone: NgZone) { }
 
     public Speech2Text() {
         this.listening = true;
@@ -68,6 +74,29 @@ export class VoiceComponent {
 
     public onVoiceOutput(value: boolean) {
         this.voiceOutput = value;
+    }
+
+    public Visualize() {
+        this.zone.runOutsideAngular(() => {
+            let chart = am4core.create("chartdiv", am4charts.XYChart);
+
+            chart.paddingRight = 20;
+
+            chart.data = this.queryResult;
+
+            let dateAxis = chart.xAxes.push(new am4charts.DateAxis());
+            //dateAxis.dataFields.date = "perioD_START";
+            dateAxis.title.text = "Dates";
+
+            let valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+            valueAxis.title.text = "Sales";
+
+            let series = chart.series.push(new am4charts.ColumnSeries());
+            series.dataFields.valueY = "m_SALES_VALUE"
+            series.dataFields.dateX = "perioD_START";
+
+            this.chart = chart;
+        });
     }
 
 }
