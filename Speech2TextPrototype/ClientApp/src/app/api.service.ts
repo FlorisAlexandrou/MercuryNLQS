@@ -8,7 +8,7 @@ import { ResponseAnswer } from './voice/AnswerInterface';
 })
 export class ApiService {
     webUrl: string = 'https://localhost:44382'
-    apiUrl: string = '/api/Voice'
+    apiUrl: string = '/api/UserInput'
 
     constructor(private httpClient: HttpClient) { }
 
@@ -17,7 +17,7 @@ export class ApiService {
     }
 
     public getAnswer(question: string, voice: boolean):Observable<ResponseAnswer> {
-        return this.httpClient.get(this.webUrl + this.apiUrl + "/token/" + question + "?voice=" + voice);
+        return this.httpClient.get(this.webUrl + this.apiUrl + "/token/" + question + "?voiceoutput=" + voice);
     }
 
     public textToSpeech(text: string) {

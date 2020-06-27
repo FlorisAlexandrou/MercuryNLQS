@@ -53,110 +53,13 @@ namespace Speech2TextPrototype.Controllers
             tokens = DeleteKnownTokens(tokens, listMeasures, listMeasureValues, listDates, listDateValues);
 
             tokenLookup(tokens, aggregates, aggAlternatives, ref listMeasures, ref listDates, ref listWhereStatements,
-                ref aggregateFunction, ref timeNum, ref timeType, isBetween);
+                ref aggregateFunction, ref timeNum, ref timeType, ref isBetween);
 
             string query = ConstructQuery(listMeasures, listDates, listWhereStatements, aggregateFunction, timeType, timeNum, isBetween);
 
             var result = _context.tdata.FromSqlRaw(query).ToList();
 
             return (result, listMeasures, query);
-        }
-
-
-        /// <summary>
-        /// Construct the query by adding the known filters
-        /// </summary>
-        /// <param name="listMeasures">List of selected measures, e.g. M_SALES_VALUE</param>
-        /// <param name="listDates">List of date filters, e.g. convert(varchar(7), PERIOD_START, 23) = '2016-01'</param>
-        /// <param name="listWhereStatements">Value of date filters, e.g. january 2016</param>
-        /// <param name="aggregateFunction">Aggregate function e.g. SUM, MAX</param>
-        /// <param name="timeType">String which is used for Past X {Year, Month, Day}</param>
-        /// <param name="timeNum">String that indicates the number of Past Years or Months or Days</param>
-        /// <returns>query</returns>
-        private string ConstructQuery(List<string> listMeasures, List<string> listDates, List<string> listWhereStatements,
-            string aggregateFunction, string timeType,  string timeNum,
-            bool isBetween)
-        {
-            string query = "";
-            string measures = "";
-            string wheres = "";
-
-            if (listMeasures.Any())
-            {
-                measures = listMeasures.Aggregate((i, j) => i + ", " + j);
-
-                // Add aggregate function
-                if (!String.IsNullOrEmpty(aggregateFunction))
-                {
-                    measures = measures.Insert(0, aggregateFunction.ToUpper() + "(");
-                    measures += ")";
-                }
-            }
-
-            // If past,last keyword is detected
-            if (!String.IsNullOrEmpty(timeType))
-            {
-                // Display last months or days of current year
-                if ((timeType == "month" || timeType == "day") && !listDates.Any())
-                {
-                    wheres += timeType + "(PERIOD_START) between (" + timeType + "(getdate()) - " + timeNum + ") and getdate() and YEAR(PERIOD_START) = YEAR(getdate())";
-                }
-                // Display last months or days of specific year, e.g last 2 months of 2016
-                else
-                {
-                    var year = listDates[0].Split('=')[1].Replace(" ", "");
-
-                    if (timeType == "month")
-                    {
-                        var monthDiff = 12 - Int32.Parse(timeNum);
-                        string month = monthDiff.ToString();
-                        if (monthDiff >= 1 && monthDiff <= 9)
-                        {
-                            month = "0" + month;
-                        }
-                        wheres += "CONVERT(VARCHAR(10), PERIOD_START) between '" + year + "-" + month + "-01' and '" + year + "-12-31'";
-                    }
-                    else if (timeType == "day")
-                    {
-                        var dayDiff = 31 - Int32.Parse(timeNum);
-                        string day = dayDiff.ToString();
-                        if (dayDiff >= 1 && dayDiff <= 9)
-                        {
-                            day = "0" + day;
-                        }
-                        wheres += "CONVERT(VARCHAR(10), PERIOD_START) between '" + year + "-12-" + dayDiff + "' and '" + year + "-12-31'";
-                    }
-                }
-            }
-
-            // If dates are BETWEEN a certain range
-            else if (listDates.Any() && isBetween)
-            {
-                wheres += listDates.Aggregate((i, j) => i.Split('=')[0] + "Between" + i.Split('=')[1] + " AND" + j.Split('=')[1]);
-            }
-            else if (listDates.Any())
-            {
-                if (!String.IsNullOrEmpty(wheres))
-                    wheres += " AND ";
-                wheres += listDates.Aggregate((i, j) => i + " OR " + j);
-
-            }
-
-
-            // Add the rest of the "where" Statements
-            if (listWhereStatements.Any())
-            {
-                if (!String.IsNullOrEmpty(wheres))
-                    wheres += " AND ";
-                wheres += listWhereStatements.Aggregate((i, j) => i + " AND " + j);
-            }
-            // Construct Query
-            if (String.IsNullOrEmpty(wheres))
-                query = "SELECT * FROM TDATA";
-            else
-                query = "SELECT * FROM TDATA WHERE " + wheres;
-
-            return query;
         }
 
 
@@ -261,7 +164,7 @@ namespace Speech2TextPrototype.Controllers
         private void tokenLookup(string[] tokens, string[] aggregates, string[] aggAlternatives,
             ref List<string> listMeasures, ref List<string> listDates, ref List<string> listWhereStatements,
             ref string aggregateFunction, ref string timeNum, ref string timeType,
-            bool isBetween)
+            ref bool isBetween)
         {
             int tokenIndex = 0;
 
@@ -322,6 +225,103 @@ namespace Speech2TextPrototype.Controllers
                 }
                 tokenIndex++;
             }
+        }
+
+
+        /// <summary>
+        /// Construct the query by adding the known filters
+        /// </summary>
+        /// <param name="listMeasures">List of selected measures, e.g. M_SALES_VALUE</param>
+        /// <param name="listDates">List of date filters, e.g. convert(varchar(7), PERIOD_START, 23) = '2016-01'</param>
+        /// <param name="listWhereStatements">Value of date filters, e.g. january 2016</param>
+        /// <param name="aggregateFunction">Aggregate function e.g. SUM, MAX</param>
+        /// <param name="timeType">String which is used for Past X {Year, Month, Day}</param>
+        /// <param name="timeNum">String that indicates the number of Past Years or Months or Days</param>
+        /// <returns>query</returns>
+        private string ConstructQuery(List<string> listMeasures, List<string> listDates, List<string> listWhereStatements,
+            string aggregateFunction, string timeType, string timeNum,
+            bool isBetween)
+        {
+            string query = "";
+            string measures = "";
+            string wheres = "";
+
+            if (listMeasures.Any())
+            {
+                measures = listMeasures.Aggregate((i, j) => i + ", " + j);
+
+                // Add aggregate function
+                if (!String.IsNullOrEmpty(aggregateFunction))
+                {
+                    measures = measures.Insert(0, aggregateFunction.ToUpper() + "(");
+                    measures += ")";
+                }
+            }
+
+            // If past,last keyword is detected
+            if (!String.IsNullOrEmpty(timeType))
+            {
+                // Display last months or days of current year
+                if ((timeType == "month" || timeType == "day") && !listDates.Any())
+                {
+                    wheres += timeType + "(PERIOD_START) between (" + timeType + "(getdate()) - " + timeNum + ") and getdate() and YEAR(PERIOD_START) = YEAR(getdate())";
+                }
+                // Display last months or days of specific year, e.g last 2 months of 2016
+                else
+                {
+                    var year = listDates[0].Split('=')[1].Replace(" ", "");
+
+                    if (timeType == "month")
+                    {
+                        var monthDiff = 12 - Int32.Parse(timeNum);
+                        string month = monthDiff.ToString();
+                        if (monthDiff >= 1 && monthDiff <= 9)
+                        {
+                            month = "0" + month;
+                        }
+                        wheres += "CONVERT(VARCHAR(10), PERIOD_START) between '" + year + "-" + month + "-01' and '" + year + "-12-31'";
+                    }
+                    else if (timeType == "day")
+                    {
+                        var dayDiff = 31 - Int32.Parse(timeNum);
+                        string day = dayDiff.ToString();
+                        if (dayDiff >= 1 && dayDiff <= 9)
+                        {
+                            day = "0" + day;
+                        }
+                        wheres += "CONVERT(VARCHAR(10), PERIOD_START) between '" + year + "-12-" + dayDiff + "' and '" + year + "-12-31'";
+                    }
+                }
+            }
+
+            // If dates are BETWEEN a certain range
+            else if (listDates.Any() && isBetween)
+            {
+                wheres += listDates.Aggregate((i, j) => i.Split('=')[0] + "Between" + i.Split('=')[1] + " AND" + j.Split('=')[1]);
+            }
+            else if (listDates.Any())
+            {
+                if (!String.IsNullOrEmpty(wheres))
+                    wheres += " AND ";
+                wheres += listDates.Aggregate((i, j) => "(" + i + " OR " + j + ")");
+
+            }
+
+
+            // Add the rest of the "where" Statements
+            if (listWhereStatements.Any())
+            {
+                if (!String.IsNullOrEmpty(wheres))
+                    wheres += " AND ";
+                wheres += listWhereStatements.Aggregate((i, j) => i + " AND " + j);
+            }
+            // Construct Query
+            if (String.IsNullOrEmpty(wheres))
+                query = "SELECT * FROM TDATA";
+            else
+                query = "SELECT * FROM TDATA WHERE " + wheres;
+
+            return query;
         }
     }
 }

@@ -1,0 +1,29 @@
+<p [hidden]="!answer">{{ answer }}</p>
+<table #DTable [hidden]="!showTable" class="table table-striped">
+  <thead>
+    <tr>
+      <th>Brand</th>
+      <th>Category Name</th>
+      <th>Period Start</th>
+      <th>Sales</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let row of tableData">
+      <td>{{ row.brand }}</td>
+      <td>{{ row.categorY_NAME }}</td>
+      <td>{{ row.perioD_START }}</td>
+      <td>{{ row.m_SALES_VALUE }}</td>
+    </tr>
+  </tbody>
+</table>
+
+<span [hidden]="prompts.length < 1">Options: </span>
+<ul>
+  <li *ngFor="let prompt of prompts">
+    {{ prompt }}
+  </li>
+</ul>
+
+<button (click)="Visualize()">Visualize</button>
+<div id="chartdiv" style="width: 100%; height: 500px"></div>

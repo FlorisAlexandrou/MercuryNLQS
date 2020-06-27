@@ -21,7 +21,7 @@ namespace Speech2TextPrototype.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Produces("application/json")]
-    public class VoiceController : ControllerBase
+    public class UserInputController : ControllerBase
     {
         private static readonly AzureKeyCredential credentials = new AzureKeyCredential("a80f6dfc55004cc9a3b49af55826c3c2");
         private static readonly Uri endpoint = new Uri("https://floris-textanalytics.cognitiveservices.azure.com/");
@@ -30,15 +30,20 @@ namespace Speech2TextPrototype.Controllers
                     "eastus");
         private LookupValuesController _lvc;
 
-        public VoiceController(Controllers.LookupValuesController lvc)
+        public UserInputController(Controllers.LookupValuesController lvc)
         {
             _lvc = lvc;
             Console.WriteLine(_lvc);
         }
 
-        // GET: api/Voice
+
+        /// <summary>
+        /// Recognize speech from microphone
+        /// </summary>
+        /// <returns>A string of recognized speech</returns>
+        // GET: api/UserInput
         [HttpGet]
-        public async Task<ActionResult> GetAsync()
+        public async Task<ActionResult> RecognizeSpeech()
         {
             using var recognizer = new SpeechRecognizer(speechConfig);
             string text = "";
@@ -64,9 +69,14 @@ namespace Speech2TextPrototype.Controllers
         }
 
 
+        /// <summary>
+        /// Get user's query, send to python tokenizer and decide what to do with it
+        /// </summary>
+        /// <param name="sentence">The user's question/query</param>
+        /// <returns>Json object that either contains bot answer or DB query answer</returns>
         [HttpGet]
         [Route("token/{sentence}")]
-        public async Task<IActionResult> Test(string sentence)
+        public async Task<IActionResult> HandleUserQuery(string sentence, bool voiceOutput)
         {
             string url = "https://tokens-api.herokuapp.com/tokenize/";
             string query = "";
@@ -82,27 +92,42 @@ namespace Speech2TextPrototype.Controllers
                 if (res.isSqlQuery)
                    (queryResult, listMeasures, query) = _lvc.token2Sql(res);
                 else
-                    qna = GetQnA(sentence, false);
+                    qna = GetQnA(sentence, voiceOutput);
+                if (queryResult.Any() && queryResult.Count() <= 3000)
+                {
+                    qna = GetQnA("Output Type", voiceOutput);
+                }
                 return Ok(new { queryResult, listMeasures, qna, query });
             }
         }
 
+        /// <summary>
+        /// Ask a question and get an answer from the qna maker bot
+        /// </summary>
+        /// <param name="question">The user's question</param>
+        /// <param name="voiceOutput">If enabled, then the bot's answer will be also turned to voice</param>
+        /// <returns>Bot's answer and asynchronous voice output</returns>
         [HttpGet]
         [Route("qna/{question}")]
-        public QnASearchResultList GetQnA(string question, bool voice)
+        public QnASearchResultList GetQnA(string question, bool voiceOutput)
         {
             var endpointhostName = "https://query-assistant.azurewebsites.net";
             var endpointKey = "4c627627-04b6-4439-9969-87e92e45fe64";
             string kbId = "17d474de-7b95-4035-bfe0-c78fee641eaf";
             var runtimeClient = new QnAMakerRuntimeClient(new EndpointKeyServiceClientCredentials(endpointKey)) { RuntimeEndpoint = endpointhostName };
             var response = runtimeClient.Runtime.GenerateAnswerAsync(kbId, new QueryDTO { Question = question }).Result;
-            if (voice)
+            if (voiceOutput)
             {
                 _ = textToSpeechAsync(response.Answers[0].Answer);
             }
             return response;
         }
 
+        /// <summary>
+        /// Turns text to speech
+        /// </summary>
+        /// <param name="text">The text to be returned as speech</param>
+        /// <returns>Speech/Sound output of the given text</returns>
         [HttpGet]
         [Route("text2speech/{text}")]
         public async Task textToSpeechAsync(string text)

@@ -7,9 +7,15 @@
   <i class="fa fa-microphone"></i>
   <div [class.pulse-ring]="listening"></div>
 </button>
-<p [hidden]="!answer">{{ answer }}</p>
+<br />
+  Voice Output
+<input #voiceSwitch id="voiceSwitch" type="checkbox" data-toggle="switchbutton" [checked]="voiceOutput" (change)="onVoiceOutput(voiceSwitch.checked)">
+<br />
+<div [hidden]="!thinking" class="lds-facebook"><div></div><div></div><div></div></div>
 
-<table *ngIf="queryResult.length" class="table table-striped">
+<app-visualization></app-visualization>
+
+<!--<table #DTable [hidden]="!queryResult.length" class="table table-striped">
   <thead>
     <tr>
       <th>Brand</th>
@@ -36,10 +42,14 @@
 </ul>
 <div [hidden]="!thinking" class="lds-facebook"><div></div><div></div><div></div></div>
 
-  Voice Output
-<input #voiceSwitch id="voiceSwitch" type="checkbox" data-toggle="switchbutton" [checked]="voiceOutput" (change)="onVoiceOutput(voiceSwitch.checked)">
+
 
 <button (click)="Visualize()">Visualize</button>
-<div id="chartdiv" style="width: 100%; height: 500px"></div>
+<div id="chartdiv" style="width: 100%; height: 500px"></div>-->
+<!--<script>
+  $(document).ready(function() {
+    $('#DTable').DataTable();
+} );
+</script>-->
 
 <iframe src='https://webchat.botframework.com/embed/query-assistant-bot?s=SE5ZNHJdPrI.oSvlUmNyuS1scai7ZRUZNA8k-WkHjstNDJ_jmti-M70' style='min-width: 400px; width: 100%; min-height: 500px;'></iframe>
