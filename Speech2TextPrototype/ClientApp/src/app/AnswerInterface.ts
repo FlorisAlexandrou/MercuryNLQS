@@ -5,10 +5,6 @@ export interface ResponseAnswer {
     query?: string;
 }
 
-export interface SalesValue {
-    m_SALES_VALUE: number;
-}
-
 export interface TData {
     tid: number;
     quanitity: number;

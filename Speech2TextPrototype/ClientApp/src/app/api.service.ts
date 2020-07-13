@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { ResponseAnswer } from './voice/AnswerInterface';
+import { ResponseAnswer } from './AnswerInterface';
 
 @Injectable({
   providedIn: 'root'

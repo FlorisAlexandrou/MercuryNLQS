@@ -36,11 +36,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="ClientApp\src\app\voice\AnswerInterface.ts" />
+    <None Remove="ClientApp\src\app\user-input\AnswerInterface.ts" />
   </ItemGroup>
 
   <ItemGroup>
-    <TypeScriptCompile Include="ClientApp\src\app\voice\AnswerInterface.ts" />
+    <TypeScriptCompile Include="ClientApp\src\app\AnswerInterface.ts" />
   </ItemGroup>
 
   <Target Name="DebugEnsureNodeEnv" BeforeTargets="Build" Condition=" '$(Configuration)' == 'Debug' And !Exists('$(SpaRoot)node_modules') ">

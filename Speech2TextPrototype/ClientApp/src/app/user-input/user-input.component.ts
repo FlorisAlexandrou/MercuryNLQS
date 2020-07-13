@@ -1,16 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { ApiService } from '../api.service';
-import { TData, ResponseAnswer } from './AnswerInterface'
+import { ResponseAnswer } from '../AnswerInterface'
 
 import { VisualizationService } from '../visualization.service';
 
 
 @Component({
-  selector: 'app-voice-component',
-  templateUrl: './voice.component.html',
-  styleUrls: ['./voice.component.scss']
+  selector: 'app-UserInput-component',
+  templateUrl: './user-input.component.html',
+  styleUrls: ['./user-input.component.scss']
 })
-export class VoiceComponent implements OnInit{
+export class UserInputComponent implements OnInit{
     private resultSpeech2Text: string;
     private thinking: boolean = false;
     private listening: boolean = false;
@@ -47,7 +47,7 @@ export class VoiceComponent implements OnInit{
 
     }
 
-    // For testing
+    // For testing only
     public textToSpeech(text: string) {
         this.apiService.textToSpeech(text).subscribe((res) => {
         });

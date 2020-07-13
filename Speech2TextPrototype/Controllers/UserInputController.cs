@@ -80,6 +80,7 @@ namespace Speech2TextPrototype.Controllers
         {
             string url = "https://tokens-api.herokuapp.com/tokenize/";
             string query = "";
+            int responseThershold = 3000;
             List<TData> queryResult = new List<TData>();
             QnASearchResultList qna = new QnASearchResultList();
             List<string> listMeasures = new List<string>();
@@ -93,7 +94,18 @@ namespace Speech2TextPrototype.Controllers
                    (queryResult, listMeasures, query) = _lvc.token2Sql(res);
                 else
                     qna = GetQnA(sentence, voiceOutput);
-                if (queryResult.Any() && queryResult.Count() <= 3000)
+
+                //TODO: Error Handling here
+                // Idea: Whenever an error occurs, throw exception and pass it to qnamaker to get the corresponding answer
+
+                // If listMeasures.Count() < 0 then throw exception: did not understand the parameters
+                // try for sales, sales items, sales volume
+
+                // Else If string.IsNullOrEmpty(queryResult) then throw exception: Could not bring results to your query
+                // try a simpler query with fewer/different filters
+
+
+                if (queryResult.Any() && queryResult.Count() <= responseThershold)
                 {
                     qna = GetQnA("Output Type", voiceOutput);
                 }

@@ -7,7 +7,7 @@ import { RouterModule } from '@angular/router';
 import { AppComponent } from './app.component';
 import { NavMenuComponent } from './nav-menu/nav-menu.component';
 import { HomeComponent } from './home/home.component';
-import { VoiceComponent } from './voice/voice.component';
+import { UserInputComponent } from './user-input/user-input.component';
 import { VisualizationComponent } from './visualization/visualization.component';
 
 @NgModule({
@@ -15,7 +15,7 @@ import { VisualizationComponent } from './visualization/visualization.component'
     AppComponent,
     NavMenuComponent,
     HomeComponent,
-    VoiceComponent,
+    UserInputComponent,
     VisualizationComponent
   ],
   imports: [
@@ -24,7 +24,7 @@ import { VisualizationComponent } from './visualization/visualization.component'
     FormsModule,
     RouterModule.forRoot([
       { path: '', component: HomeComponent, pathMatch: 'full' },
-      { path: 'voice', component: VoiceComponent },
+      { path: 'UserInput', component: UserInputComponent },
     ])
   ],
   providers: [],

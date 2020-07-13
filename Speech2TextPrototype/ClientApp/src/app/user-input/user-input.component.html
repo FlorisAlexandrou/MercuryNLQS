@@ -1,0 +1,16 @@
+<h1>Ask anything!</h1>
+
+<span aria-live="polite">Question:</span>
+<input class="mr-1" type="text" [(ngModel)]="question" (keydown.enter)="getAnswer(question)" [value]="resultSpeech2Text" />
+<button class="btn btn-primary mr-1" (click)="getAnswer(question)">Ask!</button>
+<button id="speech" class="btn" (click)="Speech2Text()">
+  <i class="fa fa-microphone"></i>
+  <div [class.pulse-ring]="listening"></div>
+</button>
+<br />
+  Voice Output
+<input #voiceSwitch id="voiceSwitch" type="checkbox" data-toggle="switchbutton" [checked]="voiceOutput" (change)="onVoiceOutput(voiceSwitch.checked)">
+<br />
+<div [hidden]="!thinking" class="lds-facebook"><div></div><div></div><div></div></div>
+
+<app-visualization></app-visualization>

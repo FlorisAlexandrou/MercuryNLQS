@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { ResponseAnswer } from './Voice/AnswerInterface';
-import { BehaviorSubject, Observable, Observer } from 'rxjs';
+import { ResponseAnswer } from './AnswerInterface';
+import { BehaviorSubject } from 'rxjs';
 import { EventEmitter } from 'events';
 
 

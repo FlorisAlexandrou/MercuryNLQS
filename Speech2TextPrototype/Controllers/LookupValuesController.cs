@@ -25,6 +25,7 @@ namespace Speech2TextPrototype.Controllers
 
 
         /// <summary>
+        /// MAIN FUNCTION
         /// Query the database based on the natural language tokens received from the Python NLTK api
         /// </summary>
         /// <param name="res">Python Tokenizer Response</param>
