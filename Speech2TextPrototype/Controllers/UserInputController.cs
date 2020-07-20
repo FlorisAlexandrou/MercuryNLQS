@@ -23,14 +23,13 @@ namespace Speech2TextPrototype.Controllers
     [Produces("application/json")]
     public class UserInputController : ControllerBase
     {
-        private static readonly AzureKeyCredential credentials = new AzureKeyCredential("a80f6dfc55004cc9a3b49af55826c3c2");
-        private static readonly Uri endpoint = new Uri("https://floris-textanalytics.cognitiveservices.azure.com/");
+        private LookupValuesController _lvc;
+
         private static readonly SpeechConfig speechConfig = SpeechConfig.FromSubscription(
                     "7e02a98e81db4d2ebcd09ec25472af3d",
                     "eastus");
-        private LookupValuesController _lvc;
 
-        public UserInputController(Controllers.LookupValuesController lvc)
+        public UserInputController(LookupValuesController lvc)
         {
             _lvc = lvc;
             Console.WriteLine(_lvc);
@@ -123,9 +122,9 @@ namespace Speech2TextPrototype.Controllers
         [Route("qna/{question}")]
         public QnASearchResultList GetQnA(string question, bool voiceOutput)
         {
-            var endpointhostName = "https://query-assistant.azurewebsites.net";
-            var endpointKey = "4c627627-04b6-4439-9969-87e92e45fe64";
-            string kbId = "17d474de-7b95-4035-bfe0-c78fee641eaf";
+            var endpointhostName = "https://floris-qnaservice.azurewebsites.net";
+            var endpointKey = "f3536082-ee9c-408f-9948-1fb77b30c0c6";
+            string kbId = "f158eca8-f7f3-4c88-a7d7-b7724956df4c";
             var runtimeClient = new QnAMakerRuntimeClient(new EndpointKeyServiceClientCredentials(endpointKey)) { RuntimeEndpoint = endpointhostName };
             var response = runtimeClient.Runtime.GenerateAnswerAsync(kbId, new QueryDTO { Question = question }).Result;
             if (voiceOutput)
