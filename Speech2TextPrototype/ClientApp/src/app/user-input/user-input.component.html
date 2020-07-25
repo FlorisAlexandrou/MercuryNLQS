@@ -1,12 +1,27 @@
 <h1>Ask anything!</h1>
+<br />
 
-<span aria-live="polite">Question:</span>
-<input class="mr-1" type="text" [(ngModel)]="question" (keydown.enter)="getAnswer(question)" [value]="resultSpeech2Text" />
-<button class="btn btn-primary mr-1" (click)="getAnswer(question)">Ask!</button>
-<button id="speech" class="btn" (click)="Speech2Text()">
-  <i class="fa fa-microphone"></i>
-  <div [class.pulse-ring]="listening"></div>
-</button>
+<div class="flexContainer">
+
+  <input type="text" class="inputField" placeholder="Place your query here"
+         [(ngModel)]="question" #ctrl="ngModel" (keydown.enter)="getAnswer(question)"
+         [value]="resultSpeech2Text" required>
+  <button class="btn btn-primary mr-1" (click)="getAnswer(question)">Ask!</button>
+
+  <span id="speech" class="btn" (click)="Speech2Text()">
+    <i class="fa fa-microphone"></i>
+    <div [class.pulse-ring]="listening"></div>
+  </span>
+</div>
+
+<!-- Input Validation -->
+<div *ngIf="ctrl.invalid && (ctrl.dirty || ctrl.touched)">
+
+  <div *ngIf="ctrl.errors.required" class="text-danger">
+    A question is required.
+  </div>
+</div>
+
 <br />
   Voice Output
 <input #voiceSwitch id="voiceSwitch" type="checkbox" data-toggle="switchbutton" [checked]="voiceOutput" (change)="onVoiceOutput(voiceSwitch.checked)">

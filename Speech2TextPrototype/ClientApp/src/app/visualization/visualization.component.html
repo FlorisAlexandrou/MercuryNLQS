@@ -13,7 +13,9 @@
       <td>{{ row.brand }}</td>
       <td>{{ row.categorY_NAME }}</td>
       <td>{{ row.perioD_START }}</td>
-      <td>{{ row.m_SALES_VALUE }}</td>
+      <td *ngIf="measurable == 'M_SALES_VALUE'">{{ row.m_SALES_VALUE }}</td>
+      <td *ngIf="measurable == 'M_SALES_VOLUME'">{{ row.m_SALES_VOLUME }}</td>
+      <td *ngIf="measurable == 'M_SALES_ITEMS'">{{ row.m_SALES_ITEMS }}</td>
     </tr>
   </tbody>
 </table>

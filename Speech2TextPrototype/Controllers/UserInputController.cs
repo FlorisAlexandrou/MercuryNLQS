@@ -26,7 +26,7 @@ namespace Speech2TextPrototype.Controllers
         private LookupValuesController _lvc;
 
         private static readonly SpeechConfig speechConfig = SpeechConfig.FromSubscription(
-                    "7e02a98e81db4d2ebcd09ec25472af3d",
+                    "38df3e4febac4df48490c9f3d8eaa23f",
                     "eastus");
 
         public UserInputController(LookupValuesController lvc)

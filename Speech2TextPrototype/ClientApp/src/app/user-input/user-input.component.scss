@@ -105,3 +105,18 @@ $size: 50px;
     height: 32px;
   }
 }
+
+.flexContainer {
+  display: flex;
+}
+
+.inputField {
+  flex: 1;
+}
+
+.btn.btn-primary {
+  padding-left: 2vw;
+  padding-right: 2vw;
+  margin-left: -1vw;
+  text-align: center;
+}

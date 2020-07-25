@@ -38,13 +38,14 @@ export class UserInputComponent implements OnInit{
 
 
     public getAnswer(question: string) {
-        this.visualization.onWaitForAnswer(null);
-        this.thinking = true;
-        this.apiService.getAnswer(question, this.voiceOutput).subscribe((res) => {
-            this.visualization.onReceiveAnswer(res);
-            this.thinking = false;
-        });
-
+        if (question) {
+            this.visualization.onWaitForAnswer(null);
+            this.thinking = true;
+            this.apiService.getAnswer(question, this.voiceOutput).subscribe((res) => {
+                this.visualization.onReceiveAnswer(res);
+                this.thinking = false;
+            });
+        }
     }
 
     // For testing only
@@ -55,5 +56,10 @@ export class UserInputComponent implements OnInit{
 
     public onVoiceOutput(value: boolean) {
         this.voiceOutput = value;
+    }
+
+    // Logging for testing
+    public log(value: string) {
+        console.log(value);
     }
 }
