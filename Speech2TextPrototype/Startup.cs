@@ -7,6 +7,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Speech2TextPrototype.Data;
+using Speech2TextPrototype.Repositories;
+using Speech2TextPrototype.Services;
 
 namespace Speech2TextPrototype
 {
@@ -25,14 +27,19 @@ namespace Speech2TextPrototype
             services.AddDbContextPool<florisContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
 
-            services.AddControllersWithViews();
+            services.AddControllers();
             // In production, the Angular files will be served from this directory
             services.AddSpaStaticFiles(configuration =>
             {
                 configuration.RootPath = "ClientApp/dist";
             });
 
-            services.AddTransient<Controllers.LookupValuesController, Controllers.LookupValuesController>();
+            // Dependency Injection
+            // Repositories
+            services.AddTransient<ILookupValuesRepository, LookupValuesRepository>();
+            // Services
+            services.AddTransient<ILookupValuesService, LookupValuesService>();
+           
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

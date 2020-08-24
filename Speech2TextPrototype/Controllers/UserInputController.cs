@@ -14,6 +14,7 @@ using Microsoft.Azure.CognitiveServices.Knowledge.QnAMaker;
 using Microsoft.Azure.CognitiveServices.Knowledge.QnAMaker.Models;
 using Speech2TextPrototype.Data;
 using Newtonsoft.Json;
+using Speech2TextPrototype.Services;
 
 namespace Speech2TextPrototype.Controllers
 {
@@ -23,13 +24,13 @@ namespace Speech2TextPrototype.Controllers
     [Produces("application/json")]
     public class UserInputController : ControllerBase
     {
-        private LookupValuesController _lvc;
+        private ILookupValuesService _lvc;
 
         private static readonly SpeechConfig speechConfig = SpeechConfig.FromSubscription(
                     "38df3e4febac4df48490c9f3d8eaa23f",
                     "eastus");
 
-        public UserInputController(LookupValuesController lvc)
+        public UserInputController(ILookupValuesService lvc)
         {
             _lvc = lvc;
             Console.WriteLine(_lvc);

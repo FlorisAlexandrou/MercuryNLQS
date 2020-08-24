@@ -1,35 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
+﻿using Microsoft.EntityFrameworkCore;
 using Speech2TextPrototype.Data;
 using Speech2TextPrototype.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace Speech2TextPrototype.Controllers
+namespace Speech2TextPrototype.Repositories
 {
-    [Route("api/lookup")]
-    [ApiController]
-    public class LookupValuesController : ControllerBase
+    public class LookupValuesRepository : ILookupValuesRepository
     {
+
         private readonly florisContext _context;
 
-        public LookupValuesController(florisContext context)
+        public LookupValuesRepository(florisContext context)
         {
             _context = context;
         }
 
-
-        /// <summary>
-        /// MAIN FUNCTION
-        /// Query the database based on the natural language tokens received from the Python NLTK api
-        /// </summary>
-        /// <param name="res">Python Tokenizer Response</param>
-        /// <returns>Tuple containing: the table response, the list of measurables and the query as a string</returns>
         public (List<TData>, List<string>, string) token2Sql(PyRes res)
         {
             string[] tokens = res.tokens;
@@ -62,7 +50,6 @@ namespace Speech2TextPrototype.Controllers
 
             return (result, listMeasures, query);
         }
-
 
         /// <summary>
         /// Search for 2-word tokens as measures or dates
