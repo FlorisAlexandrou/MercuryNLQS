@@ -18,6 +18,12 @@ namespace Speech2TextPrototype.Repositories
             _context = context;
         }
 
+        /// <summary>
+        /// MAIN FUNCTION
+        /// Query the database based on the natural language tokens received from the Python NLTK api
+        /// </summary>
+        /// <param name="res">Python Tokenizer Response</param>
+        /// <returns>Tuple containing: the table response, the list of measurables and the query as a string</returns>
         public (List<TData>, List<string>, string) token2Sql(PyRes res)
         {
             string[] tokens = res.tokens;

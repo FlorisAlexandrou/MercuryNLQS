@@ -10,6 +10,7 @@ export interface TData {
     quanitity: number;
     price: number;
     categorY_ID: number;
+    categorY_NAME: string;
     uniT_MEASUREMENT: string;
     producT_ID: number;
     product_NAME: string;
