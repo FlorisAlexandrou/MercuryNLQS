@@ -1,28 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
+﻿using Microsoft.EntityFrameworkCore;
 using Speech2TextPrototype.Data;
 using Speech2TextPrototype.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace Speech2TextPrototype.Controllers
+namespace Speech2TextPrototype.Repositories
 {
-    [Route("api/lookup")]
-    [ApiController]
-    public class LookupValuesController : ControllerBase
+    public class LookupValuesRepository : ILookupValuesRepository
     {
+
         private readonly florisContext _context;
 
-        public LookupValuesController(florisContext context)
+        public LookupValuesRepository(florisContext context)
         {
             _context = context;
         }
-
 
         /// <summary>
         /// MAIN FUNCTION
@@ -62,7 +56,6 @@ namespace Speech2TextPrototype.Controllers
 
             return (result, listMeasures, query);
         }
-
 
         /// <summary>
         /// Search for 2-word tokens as measures or dates
