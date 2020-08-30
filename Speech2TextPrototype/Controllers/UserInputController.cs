@@ -32,7 +32,6 @@ namespace Speech2TextPrototype.Controllers
         public UserInputController(LookupValuesController lvc)
         {
             _lvc = lvc;
-            Console.WriteLine(_lvc);
         }
 
 
@@ -90,24 +89,30 @@ namespace Speech2TextPrototype.Controllers
                 PyRes res = JsonConvert.DeserializeObject<PyRes>(httpResponse);
                 // Return either a table or a bot answer
                 if (res.isSqlQuery)
-                   (queryResult, listMeasures, query) = _lvc.token2Sql(res);
+                {
+                    (queryResult, listMeasures, query) = _lvc.token2Sql(res);
+
+                    if (queryResult.Any() && queryResult.Count() <= responseThershold)
+                    {
+                        qna = GetQnA("Output Type", voiceOutput);
+                    }
+
+                    //TODO: Error Handling here
+                    // Idea: Whenever an error occurs, throw exception and pass it to qnamaker to get the corresponding answer
+
+                    // If listMeasures.Count() < 0 then throw exception: did not understand the parameters
+                    // try for sales, sales items, sales volume
+
+                    // Else If string.IsNullOrEmpty(queryResult) then throw exception: Could not bring results to your query
+                    // try a simpler query with fewer/different filters
+
+                    string error = HandleErrors(queryResult, listMeasures);
+                    if (!string.IsNullOrEmpty(error))
+                        qna = GetQnA(error, voiceOutput);
+                }
                 else
                     qna = GetQnA(sentence, voiceOutput);
 
-                //TODO: Error Handling here
-                // Idea: Whenever an error occurs, throw exception and pass it to qnamaker to get the corresponding answer
-
-                // If listMeasures.Count() < 0 then throw exception: did not understand the parameters
-                // try for sales, sales items, sales volume
-
-                // Else If string.IsNullOrEmpty(queryResult) then throw exception: Could not bring results to your query
-                // try a simpler query with fewer/different filters
-
-
-                if (queryResult.Any() && queryResult.Count() <= responseThershold)
-                {
-                    qna = GetQnA("Output Type", voiceOutput);
-                }
                 return Ok(new { queryResult, listMeasures, qna, query });
             }
         }
@@ -129,7 +134,7 @@ namespace Speech2TextPrototype.Controllers
             var response = runtimeClient.Runtime.GenerateAnswerAsync(kbId, new QueryDTO { Question = question }).Result;
             if (voiceOutput)
             {
-                _ = textToSpeechAsync(response.Answers[0].Answer);
+                _ = TextToSpeechAsync(response.Answers[0].Answer);
             }
             return response;
         }
@@ -141,10 +146,23 @@ namespace Speech2TextPrototype.Controllers
         /// <returns>Speech/Sound output of the given text</returns>
         [HttpGet]
         [Route("text2speech/{text}")]
-        public async Task textToSpeechAsync(string text)
+        public async Task TextToSpeechAsync(string text)
         {
             using var synthesizer = new SpeechSynthesizer(speechConfig);
             await synthesizer.SpeakTextAsync(text);
+        }
+
+        private string HandleErrors(List<TData> queryResult, List<string> listMeasures)
+        {
+            if (queryResult.Count() == 0)
+            {
+                return "ERROR:No Query Result";
+            }
+            else if (listMeasures.Count() == 0)
+            {
+                return "ERROR:No List Measures";
+            }
+            return string.Empty;
         }
     }
 }
