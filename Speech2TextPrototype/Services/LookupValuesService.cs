@@ -15,9 +15,29 @@ namespace Speech2TextPrototype.Services
         {
             _lookup = lookup;
         }
-        public (List<TData>, List<string>, string) token2Sql(PyRes res)
+        public LookupOutputModel token2Sql(PyRes res)
         {
+
             return _lookup.token2Sql(res);
+        }
+
+        /// <summary>
+        /// Sends error codes to qnamaker and then the qnamaker sends helpful messages to the user
+        /// </summary>
+        /// <param name="queryResult">The data returned from the TData table</param>
+        /// <param name="listMeasures">A list of measures to display (sales)</param>
+        /// <returns>Custom error code string for the qnamaker</returns>
+        public string HandleErrors(int queryResultLen, int listMeasuresLen, int listDatesLen)
+        {
+            if (queryResultLen == 0)
+            {
+                return "ERROR:No Query Result";
+            }
+            else if (listMeasuresLen == 0)
+            {
+                return "ERROR:No List Measures";
+            }
+            return string.Empty;
         }
     }
 }

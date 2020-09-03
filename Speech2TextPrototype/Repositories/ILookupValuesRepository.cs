@@ -9,6 +9,6 @@ namespace Speech2TextPrototype.Repositories
 {
     public interface ILookupValuesRepository
     {
-        public (List<TData>, List<string>, string) token2Sql(PyRes res);
+        public LookupOutputModel token2Sql(PyRes res);
     }
 }

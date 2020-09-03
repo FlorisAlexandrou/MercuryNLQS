@@ -14,13 +14,13 @@ namespace Speech2TextPrototype.Data
 
         public DbSet<TData> tdata { get; set; }
         public DbSet<LookupValues> lookupvalues { get; set; }
-        public DbSet<SalesValue> salesvalue { get; set; }
+        public DbSet<DisplayTable> displayTable { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<TData>().ToTable("TDATA");
             modelBuilder.Entity<LookupValues>().ToView("LOOKUP_VALUES").HasNoKey();
-            modelBuilder.Entity<SalesValue>().HasNoKey();
+            modelBuilder.Entity<DisplayTable>().ToView("DISPLAY_TABLE").HasNoKey();
         }
     }
 }

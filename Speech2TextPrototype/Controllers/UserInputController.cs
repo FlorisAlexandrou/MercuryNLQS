@@ -24,15 +24,15 @@ namespace Speech2TextPrototype.Controllers
     [Produces("application/json")]
     public class UserInputController : ControllerBase
     {
-        private ILookupValuesService _lvc;
+        private readonly ILookupValuesService _lookupValuesService;
 
         private static readonly SpeechConfig speechConfig = SpeechConfig.FromSubscription(
                     "38df3e4febac4df48490c9f3d8eaa23f",
                     "eastus");
 
-        public UserInputController(ILookupValuesService lvc)
+        public UserInputController(ILookupValuesService lookupValuesService)
         {
-            _lvc = lvc;
+            _lookupValuesService = lookupValuesService;
         }
 
 
@@ -78,11 +78,14 @@ namespace Speech2TextPrototype.Controllers
         public async Task<IActionResult> HandleUserQuery(string sentence, bool voiceOutput)
         {
             string url = "https://tokens-api.herokuapp.com/tokenize/";
-            string query = "";
             int responseThershold = 3000;
-            List<TData> queryResult = new List<TData>();
             QnASearchResultList qna = new QnASearchResultList();
+            LookupOutputModel lookupOutput = new LookupOutputModel();
+            List<TData> queryResult = new List<TData>();
             List<string> listMeasures = new List<string>();
+            List<string> listDates = new List<string>();
+            string query = "";
+
             using (HttpClient client = new HttpClient())
             {
                 // Tokenize Sentence
@@ -91,9 +94,10 @@ namespace Speech2TextPrototype.Controllers
                 // Return either a table or a bot answer
                 if (res.isSqlQuery)
                 {
-                    (queryResult, listMeasures, query) = _lvc.token2Sql(res);
+                    lookupOutput = _lookupValuesService.token2Sql(res);
+                    //(queryResult, listMeasures, query) = _lookupValuesService.token2Sql(res);
 
-                    if (queryResult.Any() && queryResult.Count() <= responseThershold)
+                    if (lookupOutput.data.Any() && lookupOutput.data.Count() <= responseThershold)
                     {
                         qna = GetQnA("Output Type", voiceOutput);
                     }
@@ -107,14 +111,21 @@ namespace Speech2TextPrototype.Controllers
                     // Else If string.IsNullOrEmpty(queryResult) then throw exception: Could not bring results to your query
                     // try a simpler query with fewer/different filters
 
-                    string error = HandleErrors(queryResult, listMeasures);
-                    if (!string.IsNullOrEmpty(error))
-                        qna = GetQnA(error, voiceOutput);
+                    //string error = _lookupValuesService.HandleErrors(queryResult.Count(), listMeasures.Count(), 1);
+                    //string error2 = HandleErrors(queryResult, listMeasures);
+                    //if (!string.IsNullOrEmpty(error))
+                    //    qna = GetQnA(error, voiceOutput);
+
+                    queryResult = lookupOutput.data;
+                    listMeasures = lookupOutput.measures;
+                    query = lookupOutput.querySql;
                 }
                 else
                     qna = GetQnA(sentence, voiceOutput);
 
                 return Ok(new { queryResult, listMeasures, qna, query });
+                //return Ok(new { lookupOutput.data, lookupOutput.measures, qna, lookupOutput.querySql });
+
             }
         }
 
@@ -153,6 +164,12 @@ namespace Speech2TextPrototype.Controllers
             await synthesizer.SpeakTextAsync(text);
         }
 
+        /// <summary>
+        /// Sends error codes to qnamaker and then the qnamaker sends helpful messages to the user
+        /// </summary>
+        /// <param name="queryResult">The data returned from the TData table</param>
+        /// <param name="listMeasures">A list of measures to display (sales)</param>
+        /// <returns>Custom error code string for the qnamaker</returns>
         private string HandleErrors(List<TData> queryResult, List<string> listMeasures)
         {
             if (queryResult.Count() == 0)

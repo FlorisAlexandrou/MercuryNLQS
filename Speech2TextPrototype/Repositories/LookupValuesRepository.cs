@@ -23,8 +23,8 @@ namespace Speech2TextPrototype.Repositories
         /// Query the database based on the natural language tokens received from the Python NLTK api
         /// </summary>
         /// <param name="res">Python Tokenizer Response</param>
-        /// <returns>Tuple containing: the table response, the list of measurables and the query as a string</returns>
-        public (List<TData>, List<string>, string) token2Sql(PyRes res)
+        /// <returns>Tuple containing: the table response, the list of measurables, the list of dates and the query as a string</returns>
+        public LookupOutputModel token2Sql(PyRes res)
         {
             string[] tokens = res.tokens;
             string[] bigrams = res.bigrams;
@@ -54,7 +54,8 @@ namespace Speech2TextPrototype.Repositories
 
             var result = _context.tdata.FromSqlRaw(query).ToList();
 
-            return (result, listMeasures, query);
+            var lookupOutput = new LookupOutputModel { data = result, measures = listMeasures, dates = listDateValues, dateSql = listDates, querySql = query };
+            return lookupOutput;
         }
 
         /// <summary>

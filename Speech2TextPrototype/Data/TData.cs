@@ -38,10 +38,4 @@ namespace Speech2TextPrototype.Data
         [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         public double? M_SALES_VOLUME { get; private set; }
     }
-
-    public class SalesValue
-    {
-        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
-        public double? M_SALES_VALUE { get; private set; }
-    }
 }

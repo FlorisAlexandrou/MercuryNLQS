@@ -9,6 +9,8 @@ namespace Speech2TextPrototype.Services
 {
     public interface ILookupValuesService
     {
-        public (List<TData>, List<string>, string) token2Sql(PyRes res);
+        public LookupOutputModel token2Sql(PyRes res);
+
+        public string HandleErrors(int queryResultLen, int listMeasuresLen, int listDatesLen);
     }
 }
