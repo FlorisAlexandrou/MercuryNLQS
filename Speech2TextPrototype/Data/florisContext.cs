@@ -20,7 +20,7 @@ namespace Speech2TextPrototype.Data
         {
             modelBuilder.Entity<TData>().ToTable("TDATA");
             modelBuilder.Entity<LookupValues>().ToView("LOOKUP_VALUES").HasNoKey();
-            modelBuilder.Entity<DisplayTable>().ToView("DISPLAY_TABLE").HasNoKey();
+            modelBuilder.Entity<DisplayTable>().ToTable("DISPLAY_TABLE");
         }
     }
 }

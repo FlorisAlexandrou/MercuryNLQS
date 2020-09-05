@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { ResponseAnswer } from './AnswerInterface';
+import { Answer } from './models/Answer.model';
 import { BehaviorSubject } from 'rxjs';
 import { EventEmitter } from 'events';
 
@@ -8,7 +8,7 @@ import { EventEmitter } from 'events';
   providedIn: 'root'
 })
 export class VisualizationService {
-    private responseAnswer: ResponseAnswer;
+    private responseAnswer: Answer;
     public questionEvent = new EventEmitter();
 
     private answerSource = new BehaviorSubject(this.responseAnswer);
@@ -17,11 +17,11 @@ export class VisualizationService {
     constructor() { }
 
     // Pass answer object between components
-    onReceiveAnswer(answer: ResponseAnswer) {
+    onReceiveAnswer(answer: Answer) {
         this.answerSource.next(answer);
     }
 
-    onWaitForAnswer(answer: ResponseAnswer) {
+    onWaitForAnswer(answer: Answer) {
         this.answerSource.next(answer);
     }
 

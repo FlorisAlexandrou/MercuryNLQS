@@ -37,9 +37,10 @@ namespace Speech2TextPrototype
             // Dependency Injection
             // Repositories
             services.AddTransient<ILookupValuesRepository, LookupValuesRepository>();
+            services.AddTransient<IDisplayTableRepository, DisplayTableRepository>();
             // Services
             services.AddTransient<ILookupValuesService, LookupValuesService>();
-           
+            services.AddTransient<IDisplayTableService, DisplayTableService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

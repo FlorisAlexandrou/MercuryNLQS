@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ApiService } from '../api.service';
-import { ResponseAnswer } from '../AnswerInterface'
+import { Answer } from '../models/Answer.model'
 
 import { VisualizationService } from '../visualization.service';
 
@@ -15,8 +15,8 @@ export class UserInputComponent implements OnInit{
     private thinking: boolean = false;
     private listening: boolean = false;
     public voiceOutput: boolean = false;
-    private responseAnswer: ResponseAnswer;
-    private emptyAnswer: ResponseAnswer = {}
+    private responseAnswer: Answer;
+    private emptyAnswer: Answer = {}
 
 
     private debug: boolean = false;

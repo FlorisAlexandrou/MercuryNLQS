@@ -10,15 +10,15 @@ namespace Speech2TextPrototype.Services
 {
     public class LookupValuesService : ILookupValuesService
     {
-        private readonly ILookupValuesRepository _lookup = null;
-        public LookupValuesService(ILookupValuesRepository lookup)
+        private readonly ILookupValuesRepository _lookupValuesRepository = null;
+        public LookupValuesService(ILookupValuesRepository lookupValuesRepository)
         {
-            _lookup = lookup;
+            _lookupValuesRepository = lookupValuesRepository;
         }
         public LookupOutputModel token2Sql(PyRes res)
         {
 
-            return _lookup.token2Sql(res);
+            return _lookupValuesRepository.token2Sql(res);
         }
 
         /// <summary>
@@ -36,6 +36,10 @@ namespace Speech2TextPrototype.Services
             else if (listMeasuresLen == 0)
             {
                 return "ERROR:No List Measures";
+            }
+            else if (listDatesLen == 0)
+            {
+                return "WARNING:No List Dates";
             }
             return string.Empty;
         }

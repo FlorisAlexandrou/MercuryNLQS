@@ -3,7 +3,7 @@ import { MatSort } from '@angular/material/sort';
 import { map, catchError, finalize } from 'rxjs/operators';
 import { Observable, of as observableOf, merge, BehaviorSubject, of } from 'rxjs';
 import { ApiService } from '../api.service';
-import { TData } from '../AnswerInterface';
+import { DisplayTable } from '../models/displayTable.model';
 import { DataSource, CollectionViewer } from "@angular/cdk/collections";
 
 /**
@@ -11,14 +11,14 @@ import { DataSource, CollectionViewer } from "@angular/cdk/collections";
  * encapsulate all logic for fetching and manipulating the displayed data
  * (including sorting, pagination, and filtering).
  */
-export class MaterialTableDataSource extends DataSource<TData> {
+export class MaterialTableDataSource extends DataSource<DisplayTable> {
   paginator: MatPaginator;
   sort: MatSort;
   private loadingSubject = new BehaviorSubject<boolean>(false);
-  private tdataSubject = new BehaviorSubject<TData[]>([]);
+  private tdataSubject = new BehaviorSubject<DisplayTable[]>([]);
   public loading$ = this.loadingSubject.asObservable();
   public dataLength: number;
-  public data: TData[] = [];
+  public data: DisplayTable[] = [];
 
   constructor(private api: ApiService) {
     super();
@@ -49,7 +49,7 @@ export class MaterialTableDataSource extends DataSource<TData> {
    * the returned stream emits new items.
    * @returns A stream of the items to be rendered.
    */
-  connect(CollectionViewer: CollectionViewer): Observable<TData[]> {
+  connect(CollectionViewer: CollectionViewer): Observable<DisplayTable[]> {
     // Combine everything that affects the rendered data into one update
     // stream for the data-table to consume.
     return this.tdataSubject.asObservable();
@@ -68,7 +68,7 @@ export class MaterialTableDataSource extends DataSource<TData> {
    * Paginate the data (client-side). If you're using server-side pagination,
    * this would be replaced by requesting the appropriate data from the server.
    */
-  public getPagedData(data: TData[]) {
+  public getPagedData(data: DisplayTable[]) {
     const startIndex = this.paginator.pageIndex * this.paginator.pageSize;
     var pagedData = data.splice(startIndex, this.paginator.pageSize);
     this.tdataSubject.next(pagedData);
@@ -78,7 +78,7 @@ export class MaterialTableDataSource extends DataSource<TData> {
    * Sort the data (client-side). If you're using server-side sorting,
    * this would be replaced by requesting the appropriate data from the server.
    */
-    public getSortedData(data: TData[]) {
+    public getSortedData(data: DisplayTable[]) {
       if (!this.sort.active || this.sort.direction === '') {
         return data;
       }

@@ -25,14 +25,16 @@ namespace Speech2TextPrototype.Controllers
     public class UserInputController : ControllerBase
     {
         private readonly ILookupValuesService _lookupValuesService;
+        private readonly IDisplayTableService _displayTableService;
 
         private static readonly SpeechConfig speechConfig = SpeechConfig.FromSubscription(
                     "38df3e4febac4df48490c9f3d8eaa23f",
                     "eastus");
 
-        public UserInputController(ILookupValuesService lookupValuesService)
+        public UserInputController(ILookupValuesService lookupValuesService, IDisplayTableService displayTableService)
         {
             _lookupValuesService = lookupValuesService;
+            _displayTableService = displayTableService;
         }
 
 
@@ -72,6 +74,7 @@ namespace Speech2TextPrototype.Controllers
         /// Get user's query, send to python tokenizer and decide what to do with it
         /// </summary>
         /// <param name="sentence">The user's question/query</param>
+        /// <param name="voiceOutput">Indicates whether the answer should be sent as speech</param>
         /// <returns>Json object that either contains bot answer or DB query answer</returns>
         [HttpGet]
         [Route("token/{sentence}")]
@@ -81,7 +84,7 @@ namespace Speech2TextPrototype.Controllers
             int responseThershold = 3000;
             QnASearchResultList qna = new QnASearchResultList();
             LookupOutputModel lookupOutput = new LookupOutputModel();
-            List<TData> queryResult = new List<TData>();
+            List<DisplayTable> queryResult = new List<DisplayTable>();
             List<string> listMeasures = new List<string>();
             List<string> listDates = new List<string>();
             string query = "";
@@ -95,33 +98,33 @@ namespace Speech2TextPrototype.Controllers
                 if (res.isSqlQuery)
                 {
                     lookupOutput = _lookupValuesService.token2Sql(res);
-                    //(queryResult, listMeasures, query) = _lookupValuesService.token2Sql(res);
 
                     if (lookupOutput.data.Any() && lookupOutput.data.Count() <= responseThershold)
                     {
                         qna = GetQnA("Output Type", voiceOutput);
                     }
 
-                    //TODO: Error Handling here
-                    // Idea: Whenever an error occurs, throw exception and pass it to qnamaker to get the corresponding answer
-
-                    // If listMeasures.Count() < 0 then throw exception: did not understand the parameters
-                    // try for sales, sales items, sales volume
-
-                    // Else If string.IsNullOrEmpty(queryResult) then throw exception: Could not bring results to your query
-                    // try a simpler query with fewer/different filters
-
-                    //string error = _lookupValuesService.HandleErrors(queryResult.Count(), listMeasures.Count(), 1);
-                    //string error2 = HandleErrors(queryResult, listMeasures);
-                    //if (!string.IsNullOrEmpty(error))
-                    //    qna = GetQnA(error, voiceOutput);
-
                     queryResult = lookupOutput.data;
                     listMeasures = lookupOutput.measures;
                     query = lookupOutput.querySql;
+                    listDates = lookupOutput.dates;
+
+                    var error = _lookupValuesService.HandleErrors(queryResult.Count(), listMeasures.Count(), listDates.Count());
+                    
                 }
                 else
                     qna = GetQnA(sentence, voiceOutput);
+
+                // TODO: Serverside pagination, search, sorting
+                if (qna.Answers[0].Answer == "Table")
+                {
+                    queryResult = lookupOutput.data;
+                }
+
+                if (qna.Answers[0].Answer == "What type of chart?")
+                {
+                    queryResult = _displayTableService.GetChartData();
+                }
 
                 return Ok(new { queryResult, listMeasures, qna, query });
                 //return Ok(new { lookupOutput.data, lookupOutput.measures, qna, lookupOutput.querySql });
@@ -162,25 +165,6 @@ namespace Speech2TextPrototype.Controllers
         {
             using var synthesizer = new SpeechSynthesizer(speechConfig);
             await synthesizer.SpeakTextAsync(text);
-        }
-
-        /// <summary>
-        /// Sends error codes to qnamaker and then the qnamaker sends helpful messages to the user
-        /// </summary>
-        /// <param name="queryResult">The data returned from the TData table</param>
-        /// <param name="listMeasures">A list of measures to display (sales)</param>
-        /// <returns>Custom error code string for the qnamaker</returns>
-        private string HandleErrors(List<TData> queryResult, List<string> listMeasures)
-        {
-            if (queryResult.Count() == 0)
-            {
-                return "ERROR:No Query Result";
-            }
-            else if (listMeasures.Count() == 0)
-            {
-                return "ERROR:No List Measures";
-            }
-            return string.Empty;
         }
     }
 }

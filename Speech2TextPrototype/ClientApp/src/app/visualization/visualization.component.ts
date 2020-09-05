@@ -1,9 +1,10 @@
 import { Component, OnInit, ViewChild, NgZone } from '@angular/core';
-import { TData } from '../AnswerInterface';
+import { DisplayTable } from '../models/displayTable.model';
 import { VisualizationService } from '../visualization.service';
 import * as am4core from "@amcharts/amcharts4/core";
 import * as am4charts from "@amcharts/amcharts4/charts";
 import am4themes_animated from "@amcharts/amcharts4/themes/animated";
+import { ChartData } from '../models/chartData.model';
 declare var $;
 
 am4core.useTheme(am4themes_animated);
@@ -19,8 +20,8 @@ export class VisualizationComponent implements OnInit {
     @ViewChild('DTable', { static: false }) table;
     dataTable: any;
 
-    private chartData: TData[] = [];
-    private tableData: TData[] = [];
+    private chartData: ChartData[] = [];
+    private tableData: DisplayTable[] = [];
     private measurable: string;
     private answer: string;
     private prompts: string[] = [];
@@ -55,10 +56,11 @@ export class VisualizationComponent implements OnInit {
             // If query can be visualized
             else if (res.qna.answers && res.queryResult.length > 0) {
                 console.log('query: ' + res.query);
-                console.log(res.queryResult);
+                //console.log(res.queryResult);
                 this.measurable = res.listMeasures[0];
                 this.chartData = res.queryResult;
                 this.tableData = res.queryResult;
+                console.log(this.tableData);
                 this.answer = res.qna.answers[0].answer;
             }
 
@@ -87,6 +89,9 @@ export class VisualizationComponent implements OnInit {
             switch (this.answer) {
                 case "Table":
                     this.tableVisualize();
+                    break;
+                case "What type of chart?":
+                    this.prepareChartData();
                     break;
                 case "Bar Chart":
                     this.BarChart();
@@ -117,9 +122,17 @@ export class VisualizationComponent implements OnInit {
         }, 1)
     }
 
+    private prepareChartData() {
+        this.chartData.forEach(cd => {
+            cd.timestamp = new Date(cd.perioD_START).getTime();
+        });
+        console.log("Chart Data: ", this.chartData);
+    }
+
     private BarChart() {
         this.zone.runOutsideAngular(() => {
             let chart = am4core.create("chartdiv", am4charts.XYChart);
+            am4core.options.minPolylineStep = 5;
 
             chart.data = this.chartData;
 
@@ -144,6 +157,7 @@ export class VisualizationComponent implements OnInit {
     private BarChart3D() {
         this.zone.runOutsideAngular(() => {
             let chart = am4core.create("chartdiv", am4charts.XYChart);
+            am4core.options.minPolylineStep = 5;
 
             chart.data = this.chartData;
 
@@ -155,7 +169,7 @@ export class VisualizationComponent implements OnInit {
 
             let series = chart.series.push(new am4charts.ColumnSeries3D());
             series.dataFields.valueY = "m_SALES_VALUE";
-            series.dataFields.dateX = "perioD_START";
+            series.dataFields.dateX = "timestamp";
 
             series.tooltipText = "{valueY.value}";
             chart.cursor = new am4charts.XYCursor();
@@ -169,6 +183,7 @@ export class VisualizationComponent implements OnInit {
     private PieChart() {
         this.zone.runOutsideAngular(() => {
             let chart = am4core.create("chartdiv", am4charts.PieChart);
+            am4core.options.minPolylineStep = 5;
 
             chart.data = this.chartData;
 
@@ -184,6 +199,7 @@ export class VisualizationComponent implements OnInit {
     private radarChart() {
         this.zone.runOutsideAngular(() => {
             let chart = am4core.create("chartdiv", am4charts.RadarChart);
+            am4core.options.minPolylineStep = 5;
 
             chart.data = this.chartData;
 
