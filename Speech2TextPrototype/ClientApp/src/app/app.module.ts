@@ -10,7 +10,6 @@ import { HomeComponent } from './home/home.component';
 import { UserInputComponent } from './user-input/user-input.component';
 import { VisualizationComponent } from './visualization/visualization.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { MaterialTableComponent } from './material-table/material-table.component';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSortModule } from '@angular/material/sort';
@@ -22,7 +21,6 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner'
     HomeComponent,
     UserInputComponent,
     VisualizationComponent,
-    MaterialTableComponent
   ],
   imports: [
     BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),
@@ -31,7 +29,6 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner'
     RouterModule.forRoot([
       { path: '', component: HomeComponent, pathMatch: 'full' },
       { path: 'UserInput', component: UserInputComponent },
-      { path: 'table', component: MaterialTableComponent },
     ]),
     BrowserAnimationsModule,
     MatTableModule,

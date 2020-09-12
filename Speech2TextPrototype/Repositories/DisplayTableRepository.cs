@@ -15,6 +15,11 @@ namespace Speech2TextPrototype.Repositories
             _context = context;
         }
 
+        public List<DisplayTable> GetTableData()
+        {
+            return _context.displayTable.ToList();
+        }
+
         public List<DisplayTable> GetChartData()
         {
             var chartData = _context.displayTable.Select(r => new DisplayTable() 

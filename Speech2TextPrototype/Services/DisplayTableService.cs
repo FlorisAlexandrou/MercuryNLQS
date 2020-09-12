@@ -15,6 +15,10 @@ namespace Speech2TextPrototype.Services
         {
             _displayTableRepository = displayTableRepository;
         }
+        public List<DisplayTable> GetTableData()
+        {
+            return _displayTableRepository.GetTableData();
+        }
 
         public List<DisplayTable> GetChartData()
         {

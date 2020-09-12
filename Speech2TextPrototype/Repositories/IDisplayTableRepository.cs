@@ -8,6 +8,7 @@ namespace Speech2TextPrototype.Repositories
 {
     public interface IDisplayTableRepository
     {
+        public List<DisplayTable> GetTableData();
         public List<DisplayTable> GetChartData();
     }
 }

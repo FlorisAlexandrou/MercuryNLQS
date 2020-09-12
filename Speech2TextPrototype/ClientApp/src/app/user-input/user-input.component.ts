@@ -16,6 +16,8 @@ export class UserInputComponent implements OnInit{
     private listening: boolean = false;
     public voiceOutput: boolean = false;
     private responseAnswer: Answer;
+    private question: string;
+    private submittedQuestion: string;
     private emptyAnswer: Answer = {}
 
 
@@ -36,13 +38,12 @@ export class UserInputComponent implements OnInit{
         });
     }
 
-
     public getAnswer(question: string) {
         if (question) {
-            this.visualization.onWaitForAnswer(null);
+            this.submittedQuestion = question;
             this.thinking = true;
             this.apiService.getAnswer(question, this.voiceOutput).subscribe((res) => {
-                this.visualization.onReceiveAnswer(res);
+                this.responseAnswer = res;
                 this.thinking = false;
             });
         }

@@ -8,6 +8,7 @@ namespace Speech2TextPrototype.Services
 {
     public interface IDisplayTableService
     {
+        public List<DisplayTable> GetTableData();
         public List<DisplayTable> GetChartData();
     }
 }

@@ -1,24 +1,51 @@
-<p [hidden]="!answer">{{ answer }}</p>
-<table #DTable [hidden]="!showTable" class="table table-striped">
-  <thead>
-    <tr>
-      <th>Brand</th>
-      <th>Category Name</th>
-      <th>Period Start</th>
-      <th>Sales</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let row of tableData">
-      <td>{{ row.brand }}</td>
-      <td>{{ row.categorY_NAME }}</td>
-      <td>{{ row.perioD_START }}</td>
-      <td *ngIf="measurable == 'M_SALES_VALUE'">{{ row.m_SALES_VALUE }}</td>
-      <td *ngIf="measurable == 'M_SALES_VOLUME'">{{ row.m_SALES_VOLUME }}</td>
-      <td *ngIf="measurable == 'M_SALES_ITEMS'">{{ row.m_SALES_ITEMS }}</td>
-    </tr>
-  </tbody>
-</table>
+<p [hidden]="!answerText">{{ answerText }}</p>
+<!-- Angular material table -->
+<div class="mat-table__wrapper" [hidden]="!showTable">
+  <mat-table class="mat-elevation-z8" matSort #sortData="matSort" [dataSource]="dataSource">
+
+    <ng-container matColumnDef="brand">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Brand</mat-header-cell>
+      <mat-cell *matCellDef="let row">{{row.brand}}</mat-cell>
+    </ng-container>
+
+    <ng-container matColumnDef="categoryName">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Category Name</mat-header-cell>
+      <mat-cell *matCellDef="let row">{{row.categorY_NAME}}</mat-cell>
+    </ng-container>
+
+    <ng-container matColumnDef="periodStart">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Period Start</mat-header-cell>
+      <mat-cell *matCellDef="let row">{{row.perioD_START}}</mat-cell>
+    </ng-container>
+
+    <ng-container *ngIf="measurable == 'M_SALES_VALUE' || measurable == undefined" matColumnDef="sales">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Sales</mat-header-cell>
+      <mat-cell *matCellDef="let row">{{ row.m_SALES_VALUE }}</mat-cell>
+    </ng-container>
+
+    <ng-container *ngIf="measurable == 'M_SALES_VOLUME'" matColumnDef="sales">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Sales</mat-header-cell>
+      <mat-cell *matCellDef="let row">{{ row.m_SALES_VOLUME }}</mat-cell>
+    </ng-container>
+
+    <ng-container *ngIf="measurable == 'M_SALES_ITEMS'" matColumnDef="sales">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Sales</mat-header-cell>
+      <mat-cell *matCellDef="let row">{{ row.m_SALES_ITEMS }}</mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+  </mat-table>
+
+  <!-- start: BOTTOM -->
+  <div class="mat-table__bottom">
+    <!-- MATERIAL SPINNER | Url: 'https://material.angular.io/components/progress-spinner/overview' -->
+    <mat-spinner [diameter]="25" *ngIf="dataSource.loading$ | async"></mat-spinner>
+    <!-- MATERIAL PAGINATOR | Binded to datasources -->
+    <!-- See off.documentations 'https://material.angular.io/components/paginator/overview' -->
+    <mat-paginator [length]="dataSource.dataLength" [pageSize]="5" [pageSizeOptions]="[3, 5, 10]" [showFirstLastButtons]="true"></mat-paginator>
+  </div>
+</div>
 
 <span [hidden]="prompts.length < 1">Options: </span>
 <ul>
@@ -28,5 +55,3 @@
 </ul>
 
 <div [hidden]="!showChart" id="chartdiv" style="width: 100%; height: 500px"></div>
-
-<!--<app-material-table></app-material-table>-->

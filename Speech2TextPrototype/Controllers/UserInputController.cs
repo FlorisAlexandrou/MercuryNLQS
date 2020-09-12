@@ -88,6 +88,7 @@ namespace Speech2TextPrototype.Controllers
             List<string> listMeasures = new List<string>();
             List<string> listDates = new List<string>();
             string query = "";
+            string error = "";
 
             using (HttpClient client = new HttpClient())
             {
@@ -99,35 +100,44 @@ namespace Speech2TextPrototype.Controllers
                 {
                     lookupOutput = _lookupValuesService.token2Sql(res);
 
-                    if (lookupOutput.data.Any() && lookupOutput.data.Count() <= responseThershold)
-                    {
-                        qna = GetQnA("Output Type", voiceOutput);
-                    }
-
+                    // Error Handling
                     queryResult = lookupOutput.data;
                     listMeasures = lookupOutput.measures;
                     query = lookupOutput.querySql;
                     listDates = lookupOutput.dates;
 
-                    var error = _lookupValuesService.HandleErrors(queryResult.Count(), listMeasures.Count(), listDates.Count());
+                    error = _lookupValuesService.HandleErrors(queryResult.Count(), listMeasures.Count(), listDates.Count());
+
+                    // If error => GetQna(error)
+
+                    if (lookupOutput.data.Any() && lookupOutput.data.Count() <= responseThershold)
+                    {
+                        qna = GetQnA("Output Type", voiceOutput);
+                    }
+
+                    
                     
                 }
                 else
                     qna = GetQnA(sentence, voiceOutput);
 
                 // TODO: Serverside pagination, search, sorting
-                if (qna.Answers[0].Answer == "Table")
+                if (qna.Answers != null)
                 {
-                    queryResult = lookupOutput.data;
+                    if (qna.Answers[0].Answer == "Table")
+                    {
+                        queryResult = _displayTableService.GetTableData();
+                    }
+
+                    else if (qna.Answers[0].Answer == "What type of chart?")
+                    {
+                        queryResult = _displayTableService.GetChartData();
+                    }
+                    else
+                        queryResult = null;
                 }
 
-                if (qna.Answers[0].Answer == "What type of chart?")
-                {
-                    queryResult = _displayTableService.GetChartData();
-                }
-
-                return Ok(new { queryResult, listMeasures, qna, query });
-                //return Ok(new { lookupOutput.data, lookupOutput.measures, qna, lookupOutput.querySql });
+                return Ok(new { queryResult, listMeasures, qna, query, error });
 
             }
         }

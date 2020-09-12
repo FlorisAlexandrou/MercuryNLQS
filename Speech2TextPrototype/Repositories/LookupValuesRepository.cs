@@ -70,9 +70,9 @@ namespace Speech2TextPrototype.Repositories
             // Insert results into displayTable to allow for serverside pagination,filtering etc
             _context.Database.ExecuteSqlRaw("TRUNCATE TABLE [DISPLAY_TABLE]");
             _context.displayTable.AddRange(dt);
-            _context.SaveChangesAsync();
+            _context.SaveChanges();
 
-            return new LookupOutputModel { data = dt.ToList(), measures = listMeasures, dates = listDates, querySql = query };
+            return new LookupOutputModel { data = dt, measures = listMeasures, dates = listDates, querySql = query };
         }
 
         /// <summary>
