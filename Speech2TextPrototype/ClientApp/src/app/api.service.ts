@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Answer } from './models/Answer.model';
+import { DisplayTable } from './models/displayTable.model';
 
 @Injectable({
   providedIn: 'root'
@@ -17,7 +18,15 @@ export class ApiService {
     }
 
     public getAnswer(question: string, voice: boolean):Observable<Answer> {
-        return this.httpClient.get(this.webUrl + this.apiUrl + "/token/" + question + "?voiceoutput=" + voice);
+        return this.httpClient.get(this.webUrl + this.apiUrl + `/token/${question}?voiceoutput=${voice}`);
+    }
+
+    public getPagedData(pageIndex: number, pageSize: number): Observable<DisplayTable> {
+        return this.httpClient.get<DisplayTable>(this.webUrl + this.apiUrl + `/table/page?pageIndex=${pageIndex}&pageSize=${pageSize}`);
+    }
+
+    public getSortedData(column: string, sortOrder: string, pageIndex: number, pageSize: number): Observable<DisplayTable> {
+        return this.httpClient.get<DisplayTable>(this.webUrl + this.apiUrl + `/table/sort?column=${column}&sortOrder=${sortOrder}&pageIndex=${pageIndex}&pageSize=${pageSize}`);
     }
 
     public textToSpeech(text: string) {

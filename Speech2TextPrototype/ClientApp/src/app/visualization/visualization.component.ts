@@ -10,6 +10,7 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { MaterialTableDataSource } from './material-table-datasource';
 import { tap } from 'rxjs/operators';
+import { ApiService } from '../api.service';
 declare var $;
 
 am4core.useTheme(am4themes_animated);
@@ -32,16 +33,16 @@ export class VisualizationComponent implements OnInit, OnChanges {
     @Input('question') question: string;
     private chartData: ChartData[] = [];
     private tableData: DisplayTable[] = [];
-    private measurable: string;
+    private measurable = '';
     private answerText = '';
     private prompts: string[] = [];
 
     private showTable = false;
     private showChart = false;
-    constructor(private visualization: VisualizationService, private zone: NgZone) { }
+    constructor(private visualization: VisualizationService, private zone: NgZone, private api: ApiService) { }
 
     ngOnInit() {
-        this.dataSource = new MaterialTableDataSource();
+        this.dataSource = new MaterialTableDataSource(this.api);
     }
 
     ngOnChanges(changes: SimpleChanges) {
@@ -81,7 +82,7 @@ export class VisualizationComponent implements OnInit, OnChanges {
         const res = this.answer;
 
         // Get measurable
-        if (res.listMeasures)
+        if (res.listMeasures.length > 0)
             this.measurable = res.listMeasures[0];
 
         // Check if there is data in the response
@@ -152,7 +153,7 @@ export class VisualizationComponent implements OnInit, OnChanges {
                 tap(() => this.dataSource.getSortedData(this.dataSource.data))
             ).subscribe();
 
-        this.dataSource.loadData(this.tableData);
+        this.dataSource.loadData(this.tableData, this.measurable);
         this.showTable = true;
     }
 

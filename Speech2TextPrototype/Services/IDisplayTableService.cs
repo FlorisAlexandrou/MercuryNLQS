@@ -10,5 +10,8 @@ namespace Speech2TextPrototype.Services
     {
         public List<DisplayTable> GetTableData();
         public List<DisplayTable> GetChartData();
+        public List<DisplayTable> GetTablePaged(int pageIndex, int pageSize);
+        public List<DisplayTable> GetTableSorted(string column, string sortOrder, int pageIndex, int pageSize);
+
     }
 }

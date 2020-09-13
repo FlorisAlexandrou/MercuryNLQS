@@ -136,7 +136,6 @@ namespace Speech2TextPrototype.Controllers
                     else
                         queryResult = null;
                 }
-
                 return Ok(new { queryResult, listMeasures, qna, query, error });
 
             }
@@ -175,6 +174,26 @@ namespace Speech2TextPrototype.Controllers
         {
             using var synthesizer = new SpeechSynthesizer(speechConfig);
             await synthesizer.SpeakTextAsync(text);
+        }
+
+        /// <summary>
+        /// Server-side Pagination
+        /// </summary>
+        /// <param name="pageIndex">The index of the datatable page we are on</param>
+        /// <param name="pageSize">The number of rows per page</param>
+        /// <returns>Paged data back to the datatable</returns>
+        [HttpGet]
+        [Route("table/page")]
+        public List<DisplayTable> getPagedTable(int pageIndex, int pageSize)
+        {
+            return _displayTableService.GetTablePaged(pageIndex, pageSize);
+        }
+
+        [HttpGet]
+        [Route("table/sort")]
+        public List<DisplayTable> getSortedTable(string column, string sortOrder, int pageIndex, int pageSize)
+        {
+            return _displayTableService.GetTableSorted(column, sortOrder, pageIndex, pageSize);
         }
     }
 }

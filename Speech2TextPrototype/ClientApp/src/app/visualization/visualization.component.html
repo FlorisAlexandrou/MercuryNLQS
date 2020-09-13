@@ -18,7 +18,7 @@
       <mat-cell *matCellDef="let row">{{row.perioD_START}}</mat-cell>
     </ng-container>
 
-    <ng-container *ngIf="measurable == 'M_SALES_VALUE' || measurable == undefined" matColumnDef="sales">
+    <ng-container *ngIf="measurable == 'M_SALES_VALUE' || measurable == ''" matColumnDef="sales">
       <mat-header-cell *matHeaderCellDef mat-sort-header>Sales</mat-header-cell>
       <mat-cell *matCellDef="let row">{{ row.m_SALES_VALUE }}</mat-cell>
     </ng-container>
