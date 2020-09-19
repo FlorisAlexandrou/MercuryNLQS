@@ -1,4 +1,5 @@
 <p [hidden]="!answerText">{{ answerText }}</p>
+<br/><small [hidden]="!generatedQueryText">Generated Query: {{ generatedQueryText }}</small><br/>
 <!-- Angular material table -->
 <div class="mat-table__wrapper" [hidden]="!showTable">
   <mat-table class="mat-elevation-z8" matSort #sortData="matSort" [dataSource]="dataSource">
@@ -15,7 +16,7 @@
 
     <ng-container matColumnDef="periodStart">
       <mat-header-cell *matHeaderCellDef mat-sort-header>Period Start</mat-header-cell>
-      <mat-cell *matCellDef="let row">{{row.perioD_START}}</mat-cell>
+      <mat-cell *matCellDef="let row">{{row.perioD_START | date}} </mat-cell>
     </ng-container>
 
     <ng-container *ngIf="measurable == 'M_SALES_VALUE' || measurable == ''" matColumnDef="sales">
@@ -43,7 +44,7 @@
     <mat-spinner [diameter]="25" *ngIf="dataSource.loading$ | async"></mat-spinner>
     <!-- MATERIAL PAGINATOR | Binded to datasources -->
     <!-- See off.documentations 'https://material.angular.io/components/paginator/overview' -->
-    <mat-paginator [length]="dataSource.dataLength" [pageSize]="5" [pageSizeOptions]="[3, 5, 10]" [showFirstLastButtons]="true"></mat-paginator>
+    <mat-paginator [length]="dataSource.dataLength" [pageSize]="5" [pageSizeOptions]="[5, 10, 25]" [showFirstLastButtons]="true"></mat-paginator>
   </div>
 </div>
 

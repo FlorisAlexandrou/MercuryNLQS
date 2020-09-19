@@ -1,6 +1,5 @@
 import { Component, OnInit, ViewChild, NgZone, Input, OnChanges, SimpleChanges, ɵɵqueryRefresh } from '@angular/core';
 import { DisplayTable } from '../models/displayTable.model';
-import { VisualizationService } from '../visualization.service';
 import * as am4core from "@amcharts/amcharts4/core";
 import * as am4charts from "@amcharts/amcharts4/charts";
 import am4themes_animated from "@amcharts/amcharts4/themes/animated";
@@ -34,12 +33,13 @@ export class VisualizationComponent implements OnInit, OnChanges {
     private chartData: ChartData[] = [];
     private tableData: DisplayTable[] = [];
     private measurable = '';
-    private answerText = '';
+    answerText = '';
+    generatedQueryText = '';
     private prompts: string[] = [];
 
     private showTable = false;
     private showChart = false;
-    constructor(private visualization: VisualizationService, private zone: NgZone, private api: ApiService) { }
+    constructor(private zone: NgZone, private api: ApiService) { }
 
     ngOnInit() {
         this.dataSource = new MaterialTableDataSource(this.api);
@@ -69,11 +69,14 @@ export class VisualizationComponent implements OnInit, OnChanges {
              //});
              this.chartData = [];
              this.showChart = false;
+             this.generatedQueryText = '';
          }
          else if (this.showTable) {
              this.showTable = false;
              this.dataSource.disconnect();
              this.tableData = [];
+             this.generatedQueryText = '';
+             this.dataSource = new MaterialTableDataSource(this.api);
          }
     }
 
@@ -85,11 +88,15 @@ export class VisualizationComponent implements OnInit, OnChanges {
         if (res.listMeasures.length > 0)
             this.measurable = res.listMeasures[0];
 
+        // Get SQL Query
+        if (res.query) {
+            this.generatedQueryText = res.query;
+        }
+
         // Check if there is data in the response
         if (res.queryResult) {
             // If query is too large to visualize
             if (res.queryResult.length > 3000) {
-                console.log('query: ' + res.query);
                 console.log(res.listMeasures);
                 console.log(res.queryResult);
                 this.tableData = res.queryResult;

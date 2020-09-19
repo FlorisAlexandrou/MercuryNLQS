@@ -2,9 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { ApiService } from '../api.service';
 import { Answer } from '../models/Answer.model'
 
-import { VisualizationService } from '../visualization.service';
-
-
 @Component({
   selector: 'app-UserInput-component',
   templateUrl: './user-input.component.html',
@@ -18,16 +15,13 @@ export class UserInputComponent implements OnInit{
     private responseAnswer: Answer;
     private question: string;
     private submittedQuestion: string;
-    private emptyAnswer: Answer = {}
 
 
     private debug: boolean = false;
 
-    constructor(private apiService: ApiService, private visualization: VisualizationService) { }
+    constructor(private apiService: ApiService) { }
 
-    ngOnInit() {
-        this.visualization.currentAnswer.subscribe(answer => this.responseAnswer = answer);
-    }
+    ngOnInit() { }
 
     public Speech2Text() {
         this.listening = true;

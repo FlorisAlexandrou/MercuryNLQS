@@ -29,17 +29,17 @@ namespace Speech2TextPrototype.Services
         /// <returns>Custom error code string for the qnamaker</returns>
         public string HandleErrors(int queryResultLen, int listMeasuresLen, int listDatesLen)
         {
-            if (queryResultLen == 0)
-            {
-                return "ERROR:No Query Result";
-            }
-            else if (listMeasuresLen == 0)
+            if (listMeasuresLen == 0)
             {
                 return "ERROR:No List Measures";
             }
             else if (listDatesLen == 0)
             {
                 return "WARNING:No List Dates";
+            }
+            else if (queryResultLen == 0)
+            {
+                return "ERROR:No Query Result";
             }
             return string.Empty;
         }

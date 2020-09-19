@@ -108,15 +108,16 @@ namespace Speech2TextPrototype.Controllers
 
                     error = _lookupValuesService.HandleErrors(queryResult.Count(), listMeasures.Count(), listDates.Count());
 
-                    // If error => GetQna(error)
+                    if (!String.IsNullOrEmpty(error))
+                    {
+                        qna = GetQnA(error, voiceOutput);
+                    }
 
-                    if (lookupOutput.data.Any() && lookupOutput.data.Count() <= responseThershold)
+                    else if (lookupOutput.data.Any() && lookupOutput.data.Count() <= responseThershold)
                     {
                         qna = GetQnA("Output Type", voiceOutput);
                     }
 
-                    
-                    
                 }
                 else
                     qna = GetQnA(sentence, voiceOutput);
@@ -136,7 +137,7 @@ namespace Speech2TextPrototype.Controllers
                     else
                         queryResult = null;
                 }
-                return Ok(new { queryResult, listMeasures, qna, query, error });
+                return Ok(new { queryResult, listMeasures, qna, query });
 
             }
         }
