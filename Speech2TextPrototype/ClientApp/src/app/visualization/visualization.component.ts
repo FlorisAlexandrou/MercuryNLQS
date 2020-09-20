@@ -148,17 +148,9 @@ export class VisualizationComponent implements OnInit, OnChanges {
         this.dataSource.paginator = this.paginator;
         this.dataSource.sort = this.sort;
 
-        this.paginator.page
-            .pipe(
-                tap(() => this.loadTDataPage())
-            ).subscribe();
-
+        this.paginator.page.pipe(tap(() => this.loadTDataPage())).subscribe();
         this.sort.sortChange.subscribe(() => this.paginator.pageIndex = 0);
-
-        this.sort.sortChange
-            .pipe(
-                tap(() => this.dataSource.getSortedData(this.dataSource.data))
-            ).subscribe();
+        this.sort.sortChange.pipe(tap(() => this.dataSource.getSortedData(this.dataSource.data))).subscribe();
 
         this.dataSource.loadData(this.tableData, this.measurable);
         this.showTable = true;
@@ -179,7 +171,6 @@ export class VisualizationComponent implements OnInit, OnChanges {
         this.zone.runOutsideAngular(() => {
             let chart = am4core.create("chartdiv", am4charts.XYChart);
             am4core.options.minPolylineStep = 5;
-
             chart.data = this.chartData;
 
             let dateAxis = chart.xAxes.push(new am4charts.DateAxis());
@@ -188,12 +179,10 @@ export class VisualizationComponent implements OnInit, OnChanges {
             let valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
             valueAxis.title.text = "Sales";
 
-            let series = chart.series.push(new am4charts.CandlestickSeries());
+            let series = chart.series.push(new am4charts.ColumnSeries());
             series.dataFields.valueY = "m_SALES_VALUE";
-            series.dataFields.dateX = "perioD_START";
-
-            series.tooltipText = "{valueY.value}";
-            chart.cursor = new am4charts.XYCursor();
+            series.dataFields.dateX = "timestamp";
+            series.columns.template.tooltipText = "{valueY.value}";
 
             this.XYChart = chart;
             this.showChart = true;
@@ -217,8 +206,7 @@ export class VisualizationComponent implements OnInit, OnChanges {
             series.dataFields.valueY = "m_SALES_VALUE";
             series.dataFields.dateX = "timestamp";
 
-            series.tooltipText = "{valueY.value}";
-            chart.cursor = new am4charts.XYCursor();
+            series.columns.template.tooltipText = "{valueY.value}";
 
             this.XYChart = chart;
             this.showChart = true;
@@ -235,7 +223,7 @@ export class VisualizationComponent implements OnInit, OnChanges {
 
             let pieSeries = chart.series.push(new am4charts.PieSeries());
             pieSeries.dataFields.value = "m_SALES_VALUE";
-            pieSeries.dataFields.category = "perioD_START"; 
+            pieSeries.dataFields.category = "timestamp"; 
 
             this.amPieChart = chart;
             this.showChart = true;
@@ -258,7 +246,7 @@ export class VisualizationComponent implements OnInit, OnChanges {
             let series = chart.series.push(new am4charts.RadarSeries());
             series.name = "Sales";
             series.dataFields.valueY = "m_SALES_VALUE";
-            series.dataFields.dateX = "perioD_START";
+            series.dataFields.dateX = "timestamp";
 
             this.amRadarChart = chart;  
             this.showChart = true;

@@ -19,7 +19,10 @@ namespace Speech2TextPrototype.Repositories
         private List<string> listWhereStatements = new List<string>();
 
         // SUM, MAX, MIN, COUNT, AVG
+        string[] aggregates = { "max", "min", "sum", "count", "avg" };
+        string[] aggAlternatives = { "maximum", "minimum", "total", "number", "average" };
         private string aggregateFunction = "";
+
         private bool isBetween = false;
         // Used for Past x Months, Days
         private string timeNum = "1";
@@ -41,19 +44,13 @@ namespace Speech2TextPrototype.Repositories
             string[] tokens = res.tokens;
             string[] bigrams = res.bigrams;
 
-            // SUM, MAX, MIN, COUNT, AVG
-            string[] aggregates = { "max", "min", "sum", "count", "avg" };
-            string[] aggAlternatives = { "maximum", "minimum", "total", "number", "average" };
-           
+            bigramLookup(bigrams);
 
-            bigramLookup(bigrams, listMeasures, listMeasureValues, listDates, listDateValues);
+            tokens = DeleteKnownTokens(tokens);
 
-            tokens = DeleteKnownTokens(tokens, listMeasures, listMeasureValues, listDates, listDateValues);
+            tokenLookup(tokens);
 
-            tokenLookup(tokens, aggregates, aggAlternatives, listMeasures, listDates, listWhereStatements,
-                 aggregateFunction, timeNum, timeType, isBetween);
-
-            string query = ConstructQuery(listMeasures, listDates, listWhereStatements, aggregateFunction, timeType, timeNum, isBetween);
+            string query = ConstructQuery();
 
             var result = _context.tdata.FromSqlRaw(query);
 
@@ -84,8 +81,7 @@ namespace Speech2TextPrototype.Repositories
         /// <param name="listDates">List of date filters, e.g. convert(varchar(7), PERIOD_START, 23) = '2016-01'</param>
         /// <param name="listDateValues">Value of date filters, e.g. january 2016</param>
         /// <returns>void - passing by erence</returns>
-        private void bigramLookup(string[] bigrams,
-            List<string> listMeasures, List<string> listMeasureValues, List<string> listDates, List<string> listDateValues)
+        private void bigramLookup(string[] bigrams)
         {
             foreach (string bigram in bigrams)
             {
@@ -118,8 +114,7 @@ namespace Speech2TextPrototype.Repositories
         /// <param name="listDates">List of date filters, e.g. convert(varchar(7), PERIOD_START, 23) = '2016-01'</param>
         /// <param name="listDateValues">Value of date filters, e.g. january 2016</param>
         /// <returns>Updated tokens array</returns>
-        private string[] DeleteKnownTokens(string[] tokens,
-             List<string> listMeasures, List<string> listMeasureValues, List<string> listDates, List<string> listDateValues)
+        private string[] DeleteKnownTokens(string[] tokens)
         {
             var listTokens = new List<string>(tokens);
             bool tokenDeleted = false;
@@ -173,10 +168,7 @@ namespace Speech2TextPrototype.Repositories
         /// <param name="timeNum">String that indicates the number of Past Years or Months or Days</param>
         /// <param name="timeType">String which is used for Past X {Year, Month, Day}</param>
         /// <returns>void - passing by erence</returns>
-        private void tokenLookup(string[] tokens, string[] aggregates, string[] aggAlternatives,
-            List<string> listMeasures, List<string> listDates, List<string> listWhereStatements,
-             string aggregateFunction, string timeNum, string timeType,
-             bool isBetween)
+        private void tokenLookup(string[] tokens)
         {
             int tokenIndex = 0;
 
@@ -250,9 +242,7 @@ namespace Speech2TextPrototype.Repositories
         /// <param name="timeType">String which is used for Past X {Year, Month, Day}</param>
         /// <param name="timeNum">String that indicates the number of Past Years or Months or Days</param>
         /// <returns>query</returns>
-        private string ConstructQuery(List<string> listMeasures, List<string> listDates, List<string> listWhereStatements,
-            string aggregateFunction, string timeType, string timeNum,
-            bool isBetween)
+        private string ConstructQuery()
         {
             string query = "";
             string measures = "";
