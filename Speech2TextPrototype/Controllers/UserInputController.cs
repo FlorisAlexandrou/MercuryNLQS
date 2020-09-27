@@ -89,6 +89,7 @@ namespace Speech2TextPrototype.Controllers
             List<string> listDates = new List<string>();
             string query = "";
             string error = "";
+            double scalar = -1;
 
             using (HttpClient client = new HttpClient())
             {
@@ -100,20 +101,21 @@ namespace Speech2TextPrototype.Controllers
                 {
                     lookupOutput = _lookupValuesService.token2Sql(res);
 
-                    // Error Handling
                     queryResult = lookupOutput.data;
                     listMeasures = lookupOutput.measures;
                     query = lookupOutput.querySql;
                     listDates = lookupOutput.dates;
+                    scalar = lookupOutput.scalarValue;
 
-                    error = _lookupValuesService.HandleErrors(queryResult.Count(), listMeasures.Count(), listDates.Count());
+                    // Error Handling
+                    error = _lookupValuesService.HandleErrors(queryResult.Count(), listMeasures.Count(), listDates.Count(), scalar);
 
                     if (!String.IsNullOrEmpty(error))
                     {
                         qna = GetQnA(error, voiceOutput);
                     }
 
-                    else if (lookupOutput.data.Any() && lookupOutput.data.Count() <= responseThershold)
+                    else if (queryResult.Any() && queryResult.Count() <= responseThershold)
                     {
                         qna = GetQnA("Output Type", voiceOutput);
                     }
@@ -122,22 +124,30 @@ namespace Speech2TextPrototype.Controllers
                 else
                     qna = GetQnA(sentence, voiceOutput);
 
-                // TODO: Serverside pagination, search, sorting
                 if (qna.Answers != null)
                 {
-                    if (qna.Answers[0].Answer == "Table")
+                    string botAnswer = qna.Answers[0].Answer;
+                    if (botAnswer == "Table")
                     {
                         queryResult = _displayTableService.GetTableData();
                     }
 
-                    else if (qna.Answers[0].Answer == "What type of chart?")
+                    else if (botAnswer == "What type of chart?")
                     {
                         queryResult = _displayTableService.GetChartData();
+                    }
+
+                    else if (botAnswer == "M_SALES_VALUE" || botAnswer == "M_SALES_VOLUME" || botAnswer == "M_SALES_ITEMS")
+                    {
+                        listMeasures.Add(botAnswer);
+                        queryResult = _displayTableService.GetTableData();
+                        if (queryResult.Count() <= responseThershold)
+                            qna = GetQnA("Output Type", voiceOutput);
                     }
                     else
                         queryResult = null;
                 }
-                return Ok(new { queryResult, listMeasures, qna, query });
+                return Ok(new { queryResult, listMeasures, qna, query, scalar });
 
             }
         }

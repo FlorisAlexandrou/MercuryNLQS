@@ -11,6 +11,6 @@ namespace Speech2TextPrototype.Services
     {
         public LookupOutputModel token2Sql(PyRes res);
 
-        public string HandleErrors(int queryResultLen, int listMeasuresLen, int listDatesLen);
+        public string HandleErrors(int queryResultLen, int listMeasuresLen, int listDatesLen, double scalar);
     }
 }

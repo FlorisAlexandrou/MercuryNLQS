@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, NgZone, Input, OnChanges, SimpleChanges, ɵɵqueryRefresh } from '@angular/core';
+import { Component, OnInit, ViewChild, NgZone, Input, OnChanges, SimpleChanges, ɵɵqueryRefresh, OnDestroy } from '@angular/core';
 import { DisplayTable } from '../models/displayTable.model';
 import * as am4core from "@amcharts/amcharts4/core";
 import * as am4charts from "@amcharts/amcharts4/charts";
@@ -7,9 +7,10 @@ import { ChartData } from '../models/chartData.model';
 import { Answer } from '../models/Answer.model';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
-import { MaterialTableDataSource } from './material-table-datasource';
+import { VisualizationDataSource } from './visualization-datasource';
 import { tap } from 'rxjs/operators';
 import { ApiService } from '../api.service';
+import { Subscription } from 'rxjs';
 declare var $;
 
 am4core.useTheme(am4themes_animated);
@@ -18,31 +19,36 @@ am4core.useTheme(am4themes_animated);
   templateUrl: './visualization.component.html',
   styleUrls: ['./visualization.component.css']
 })
-export class VisualizationComponent implements OnInit, OnChanges {
+export class VisualizationComponent implements OnInit, OnChanges, OnDestroy {
     private XYChart: am4charts.XYChart;
     private amPieChart: am4charts.PieChart;
     private amRadarChart: am4charts.RadarChart;
 
     @ViewChild(MatPaginator, { static: false }) paginator: MatPaginator;
     @ViewChild('sortData', { static: false }) sort: MatSort;
-    dataSource: MaterialTableDataSource;
+    dataSource: VisualizationDataSource;
     displayedColumns = ['brand', 'categoryName', 'periodStart', 'sales'];
 
     @Input('answer') answer: Answer;
     @Input('question') question: string;
+
+    answerText = '';
+    generatedQueryText = '';
+    allQuestions: string[] = [];
+    allAnswers: string[] = [];
+
     private chartData: ChartData[] = [];
     private tableData: DisplayTable[] = [];
     private measurable = '';
-    answerText = '';
-    generatedQueryText = '';
     private prompts: string[] = [];
-
     private showTable = false;
     private showChart = false;
+    private subscriptions: Subscription[] = [];
+
     constructor(private zone: NgZone, private api: ApiService) { }
 
     ngOnInit() {
-        this.dataSource = new MaterialTableDataSource(this.api);
+        this.dataSource = new VisualizationDataSource(this.api);
     }
 
     ngOnChanges(changes: SimpleChanges) {
@@ -58,7 +64,9 @@ export class VisualizationComponent implements OnInit, OnChanges {
         }
     }
 
-     handleQuestion() {
+    handleQuestion() {
+         this.allQuestions.push(this.question);
+
          // Reset UI when question is asked
          this.answerText = "";
          this.prompts = [];
@@ -74,9 +82,10 @@ export class VisualizationComponent implements OnInit, OnChanges {
          else if (this.showTable) {
              this.showTable = false;
              this.dataSource.disconnect();
+             this.subscriptions.forEach(sub => sub.unsubscribe());
              this.tableData = [];
              this.generatedQueryText = '';
-             this.dataSource = new MaterialTableDataSource(this.api);
+             this.dataSource = new VisualizationDataSource(this.api);
          }
     }
 
@@ -91,6 +100,13 @@ export class VisualizationComponent implements OnInit, OnChanges {
         // Get SQL Query
         if (res.query) {
             this.generatedQueryText = res.query;
+        }
+
+        // Get Scalar Value (result of "sum", "avg" etc)
+        if (res.scalar > 0) {
+            this.allAnswers.push(res.scalar.toString());
+            this.answerText = res.scalar.toString();
+            return;
         }
 
         // Check if there is data in the response
@@ -137,6 +153,7 @@ export class VisualizationComponent implements OnInit, OnChanges {
 
         // Normal qna response without data
         this.answerText = botAnswer;
+        this.allAnswers.push(botAnswer);
         if (res.qna.answers[0].context) {
             for (let prompt of res.qna.answers[0].context.prompts) {
                 this.prompts.push(prompt.displayText);
@@ -148,9 +165,9 @@ export class VisualizationComponent implements OnInit, OnChanges {
         this.dataSource.paginator = this.paginator;
         this.dataSource.sort = this.sort;
 
-        this.paginator.page.pipe(tap(() => this.loadTDataPage())).subscribe();
-        this.sort.sortChange.subscribe(() => this.paginator.pageIndex = 0);
-        this.sort.sortChange.pipe(tap(() => this.dataSource.getSortedData(this.dataSource.data))).subscribe();
+        this.subscriptions.push(this.paginator.page.pipe(tap(() => this.loadTDataPage())).subscribe());
+        this.subscriptions.push(this.sort.sortChange.subscribe(() => this.paginator.pageIndex = 0));
+        this.subscriptions.push(this.sort.sortChange.pipe(tap(() => this.dataSource.getSortedData(this.dataSource.data))).subscribe());
 
         this.dataSource.loadData(this.tableData, this.measurable);
         this.showTable = true;
@@ -251,5 +268,9 @@ export class VisualizationComponent implements OnInit, OnChanges {
             this.amRadarChart = chart;  
             this.showChart = true;
         });
-            }
+    }
+
+    ngOnDestroy() {
+        this.subscriptions.forEach(sub => sub.unsubscribe());
+    }
 }

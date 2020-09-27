@@ -23,9 +23,8 @@
 </div>
 
 <br />
-  Voice Output
-<input #voiceSwitch id="voiceSwitch" type="checkbox" data-toggle="switchbutton" [checked]="voiceOutput" (change)="onVoiceOutput(voiceSwitch.checked)">
+<mat-slide-toggle color="primary" (change)="toggleVoice($event)">Voice Output</mat-slide-toggle>
 <br />
 <div [hidden]="!thinking" class="lds-facebook"><div></div><div></div><div></div></div>
 
-<app-visualization [answer]="responseAnswer" [question]="submittedQuestion" ></app-visualization>
+<app-visualization [answer]="responseAnswer" [question]="submittedQuestion"></app-visualization>

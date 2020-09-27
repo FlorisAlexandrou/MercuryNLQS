@@ -27,7 +27,7 @@ namespace Speech2TextPrototype.Services
         /// <param name="queryResult">The data returned from the TData table</param>
         /// <param name="listMeasures">A list of measures to display (sales)</param>
         /// <returns>Custom error code string for the qnamaker</returns>
-        public string HandleErrors(int queryResultLen, int listMeasuresLen, int listDatesLen)
+        public string HandleErrors(int queryResultLen, int listMeasuresLen, int listDatesLen, double scalar)
         {
             if (listMeasuresLen == 0)
             {
@@ -37,10 +37,11 @@ namespace Speech2TextPrototype.Services
             {
                 return "WARNING:No List Dates";
             }
-            else if (queryResultLen == 0)
+            else if (queryResultLen == 0 && scalar == -1)
             {
                 return "ERROR:No Query Result";
             }
+
             return string.Empty;
         }
     }

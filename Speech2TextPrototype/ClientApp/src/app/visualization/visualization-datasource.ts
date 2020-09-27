@@ -10,7 +10,7 @@ import { ApiService } from '../api.service';
  * encapsulate all logic for fetching and manipulating the displayed data
  * (including sorting, pagination, and filtering).
  */
-export class MaterialTableDataSource extends DataSource<DisplayTable> {
+export class VisualizationDataSource extends DataSource<DisplayTable> {
     paginator: MatPaginator;
     sort: MatSort;
     private loadingSubject = new BehaviorSubject<boolean>(false);

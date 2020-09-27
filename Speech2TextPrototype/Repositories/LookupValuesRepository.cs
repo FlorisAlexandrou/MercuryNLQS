@@ -12,20 +12,38 @@ namespace Speech2TextPrototype.Repositories
     {
         private readonly florisContext _context;
 
+        /// <summary>List of selected measures, e.g. M_SALES_VALUE</summary>
         private List<string> listMeasures = new List<string>();
+
+        /// <summary>Value of the selected measure in the lookup table, e.g. sale item </summary>
         private List<string> listMeasureValues = new List<string>();
+
+        /// <summary>List of sql date filters, e.g. convert(varchar(7), PERIOD_START, 23) = '2016-01'</summary>
         private List<string> listDates = new List<string>();
+
+        /// <summary>Value of date filters, e.g. january 2016</summary>
         private List<string> listDateValues = new List<string>();
+
+        /// <summary>List of database-related filters e.g. Brand: "Agros"</summary>
         private List<string> listWhereStatements = new List<string>();
 
-        // SUM, MAX, MIN, COUNT, AVG
+        /// <summary>Array of statically defined aggregate functions "max, sum"</summary>
         string[] aggregates = { "max", "min", "sum", "count", "avg" };
+
+        /// <summary>Array of statically defined aggregate functions closer to natural language e.g. "maximum, total"</summary>
         string[] aggAlternatives = { "maximum", "minimum", "total", "number", "average" };
+
+        /// <summary>String of the aggregate function that is mapped between the 2 arrays (aggregates, aggAlternatives), e.g. Maximum => max</summary>
         private string aggregateFunction = "";
 
+        /// <summary>Indicates whether there is a "between" keyword in the query</summary>
         private bool isBetween = false;
+
         // Used for Past x Months, Days
+        /// <summary>String that indicates the number of Past Years or Months or Days</summary>
         private string timeNum = "1";
+
+        /// <summary>String which is used for Past X {Year, Month, Day}</summary>
         private string timeType = "";
 
         public LookupValuesRepository(florisContext context)
@@ -52,7 +70,34 @@ namespace Speech2TextPrototype.Repositories
 
             string query = ConstructQuery();
 
+            double scalar = -1;
+
             var result = _context.tdata.FromSqlRaw(query);
+
+            // Check for scalar values (Max, Sum, etc.)
+            // Uses reflection for the measurable to avoid numerous if statements (x3 code)
+            if (!String.IsNullOrEmpty(aggregateFunction) && result.Any())
+            {
+                Type type = typeof(TData);
+
+                switch (aggregateFunction)
+                {
+                    case "max":
+                        scalar = Convert.ToDouble(result.ToList().Max(r => type.GetProperty(listMeasures[0]).GetValue(r)));
+                        break;
+                    case "min":
+                        scalar = Convert.ToDouble(result.ToList().Min(r => type.GetProperty(listMeasures[0]).GetValue(r)));
+                        break;
+                    case "sum":
+                        scalar = result.ToList().Sum(r => Convert.ToDouble(type.GetProperty(listMeasures[0]).GetValue(r)));
+                        break;
+                    case "avg":
+                        scalar = result.ToList().Average(r => Convert.ToDouble(type.GetProperty(listMeasures[0]).GetValue(r)));
+                        break;
+                }
+
+                return new LookupOutputModel { data = new List<DisplayTable>(), measures = listMeasures, dates = listDates, querySql = query, scalarValue = scalar };
+            }
 
             var dt = result.Select(r => new DisplayTable()
             {
@@ -68,18 +113,14 @@ namespace Speech2TextPrototype.Repositories
             _context.Database.ExecuteSqlRaw("TRUNCATE TABLE [DISPLAY_TABLE]");
             _context.displayTable.AddRange(dt);
             _context.SaveChanges();
-
-            return new LookupOutputModel { data = dt, measures = listMeasures, dates = listDates, querySql = query };
+            return new LookupOutputModel { data = dt, measures = listMeasures, dates = listDates, querySql = query, scalarValue = scalar };
         }
+    
 
         /// <summary>
         /// Search for 2-word tokens as measures or dates
         /// </summary>
         /// <param name="bigrams">Array of 2-word tokens from the python script</param>
-        /// <param name="listMeasures">List of selected measures, e.g. M_SALES_VALUE</param>
-        /// <param name="listMeasureValues">Value of the selected measure in the lookup table, e.g. sale item</param>
-        /// <param name="listDates">List of date filters, e.g. convert(varchar(7), PERIOD_START, 23) = '2016-01'</param>
-        /// <param name="listDateValues">Value of date filters, e.g. january 2016</param>
         /// <returns>void - passing by erence</returns>
         private void bigramLookup(string[] bigrams)
         {
@@ -109,10 +150,6 @@ namespace Speech2TextPrototype.Repositories
         /// Delete Tokens identified as known bigrams
         /// </summary>
         /// <param name="tokens">Array of single-word tokens from the python script</param>
-        /// <param name="listMeasures">List of selected measures, e.g. M_SALES_VALUE</param>
-        /// <param name="listMeasureValues">Value of the selected measure in the lookup table, e.g. sale item</param>
-        /// <param name="listDates">List of date filters, e.g. convert(varchar(7), PERIOD_START, 23) = '2016-01'</param>
-        /// <param name="listDateValues">Value of date filters, e.g. january 2016</param>
         /// <returns>Updated tokens array</returns>
         private string[] DeleteKnownTokens(string[] tokens)
         {
@@ -159,14 +196,6 @@ namespace Speech2TextPrototype.Repositories
         /// Search for single-word tokens as measures, aggregates, date or any other db-related filter
         /// </summary>
         /// <param name="tokens">Array of single-word tokens from the python script</param>
-        /// <param name="aggregates">Array of statically defined aggregate functions "max, sum"</param>
-        /// <param name="aggAlternatives">Array of statically defined aggregate functions closer to natural language e.g. "maximum, total"</param>
-        /// <param name="listMeasures">List of selected measures, e.g. M_SALES_VALUE</param>
-        /// <param name="listDates">List of date filters, e.g. convert(varchar(7), PERIOD_START, 23) = '2016-01'</param>
-        /// <param name="listWhereStatements">List of database-related filters e.g. Brand: "Agros"</param>
-        /// <param name="aggregateFunction">String of the aggregate function that is mapped between the 2 arrays (aggregates, aggAlternatives), e.g. Maximum => max</param>
-        /// <param name="timeNum">String that indicates the number of Past Years or Months or Days</param>
-        /// <param name="timeType">String which is used for Past X {Year, Month, Day}</param>
         /// <returns>void - passing by erence</returns>
         private void tokenLookup(string[] tokens)
         {
@@ -235,12 +264,6 @@ namespace Speech2TextPrototype.Repositories
         /// <summary>
         /// Construct the query by adding the known filters
         /// </summary>
-        /// <param name="listMeasures">List of selected measures, e.g. M_SALES_VALUE</param>
-        /// <param name="listDates">List of date filters, e.g. convert(varchar(7), PERIOD_START, 23) = '2016-01'</param>
-        /// <param name="listWhereStatements">Value of date filters, e.g. january 2016</param>
-        /// <param name="aggregateFunction">Aggregate function e.g. SUM, MAX</param>
-        /// <param name="timeType">String which is used for Past X {Year, Month, Day}</param>
-        /// <param name="timeNum">String that indicates the number of Past Years or Months or Days</param>
         /// <returns>query</returns>
         private string ConstructQuery()
         {
@@ -318,10 +341,10 @@ namespace Speech2TextPrototype.Repositories
                 wheres += listWhereStatements.Aggregate((i, j) => i + " AND " + j);
             }
             // Construct Query
-            if (String.IsNullOrEmpty(wheres))
-                query = "SELECT * FROM TDATA";
-            else
-                query = "SELECT * FROM TDATA WHERE " + wheres;
+            query = "SELECT * FROM TDATA";
+
+            if (!String.IsNullOrEmpty(wheres))
+                query += " WHERE " + wheres;
 
             return query;
         }

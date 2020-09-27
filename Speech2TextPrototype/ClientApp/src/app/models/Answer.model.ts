@@ -6,4 +6,5 @@ export interface Answer {
     queryResult?: DisplayTable[];
     listMeasures?: string[];
     query?: string;
+    scalar?: number;
 }
