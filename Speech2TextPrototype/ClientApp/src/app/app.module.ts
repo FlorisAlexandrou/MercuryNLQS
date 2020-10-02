@@ -10,6 +10,7 @@ import { HomeComponent } from './home/home.component';
 import { UserInputComponent } from './user-input/user-input.component';
 import { VisualizationComponent } from './visualization/visualization.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { ReactiveFormsModule } from '@angular/forms';
 
 // Angular Material
 import { MatTableModule } from '@angular/material/table';
@@ -18,6 +19,8 @@ import { MatSortModule } from '@angular/material/sort';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner'
 import { MatCardModule } from '@angular/material/card';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatButtonModule } from '@angular/material/button';
+import { ScrollingModule } from '@angular/cdk/scrolling';
 
 @NgModule({
   declarations: [
@@ -42,6 +45,9 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
     MatProgressSpinnerModule,
     MatCardModule,
     MatSlideToggleModule,
+    MatButtonModule,
+    ScrollingModule,
+    ReactiveFormsModule
   ],
   providers: [],
   bootstrap: [AppComponent]

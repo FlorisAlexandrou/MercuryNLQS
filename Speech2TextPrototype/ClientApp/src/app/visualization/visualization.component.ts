@@ -1,10 +1,11 @@
-import { Component, OnInit, ViewChild, NgZone, Input, OnChanges, SimpleChanges, ɵɵqueryRefresh, OnDestroy } from '@angular/core';
+import { Component, OnInit, ViewChild, NgZone, Input, OnChanges, SimpleChanges, OnDestroy, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { DisplayTable } from '../models/displayTable.model';
 import * as am4core from "@amcharts/amcharts4/core";
 import * as am4charts from "@amcharts/amcharts4/charts";
-import am4themes_animated from "@amcharts/amcharts4/themes/animated";
+//import am4themes_animated from "@amcharts/amcharts4/themes/animated";
 import { ChartData } from '../models/chartData.model';
 import { Answer } from '../models/Answer.model';
+import { Conversation } from '../models/conversation.model';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { VisualizationDataSource } from './visualization-datasource';
@@ -13,11 +14,12 @@ import { ApiService } from '../api.service';
 import { Subscription } from 'rxjs';
 declare var $;
 
-am4core.useTheme(am4themes_animated);
+//am4core.useTheme(am4themes_animated);
 @Component({
   selector: 'app-visualization',
   templateUrl: './visualization.component.html',
-  styleUrls: ['./visualization.component.css']
+  styleUrls: ['./visualization.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class VisualizationComponent implements OnInit, OnChanges, OnDestroy {
     private XYChart: am4charts.XYChart;
@@ -31,12 +33,11 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy {
 
     @Input('answer') answer: Answer;
     @Input('question') question: string;
+    @Output('promptAnswered') promptAnswered = new EventEmitter<string>();
 
-    answerText = '';
     generatedQueryText = '';
-    allQuestions: string[] = [];
-    allAnswers: string[] = [];
-
+    allConversations: Conversation[] = [];
+    conversationIndex = 0;
     private chartData: ChartData[] = [];
     private tableData: DisplayTable[] = [];
     private measurable = '';
@@ -65,10 +66,9 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     handleQuestion() {
-         this.allQuestions.push(this.question);
-
+        const _conversation: Conversation = { question: this.question, answer: '' };
+        this.allConversations = [...this.allConversations, _conversation];
          // Reset UI when question is asked
-         this.answerText = "";
          this.prompts = [];
 
          if (this.showChart) {
@@ -104,8 +104,8 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy {
 
         // Get Scalar Value (result of "sum", "avg" etc)
         if (res.scalar > 0) {
-            this.allAnswers.push(res.scalar.toString());
-            this.answerText = res.scalar.toString();
+            const _conversation: Conversation = { question: '', answer: res.scalar.toString() };
+            this.allConversations = [...this.allConversations, _conversation];
             return;
         }
 
@@ -116,7 +116,8 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy {
                 console.log(res.listMeasures);
                 console.log(res.queryResult);
                 this.tableData = res.queryResult;
-                this.answerText = "This query result is suitable only for a table!"
+                this.allConversations[this.conversationIndex].answer = "This query result is suitable only for a table!"
+                this.conversationIndex++;
                 this.tableVisualize();
                 return;
             }
@@ -125,35 +126,36 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy {
         const botAnswer = res.qna.answers[0].answer;
         // Query can be visualized in both table or chart
         switch (botAnswer) {
-            case "Table":
-                this.tableData = res.queryResult;
-                console.log("tableData: ", this.tableData);
-                this.tableVisualize();
-                break;
             case "What type of chart?":
                 this.chartData = res.queryResult;
                 this.prepareChartData();
                 break;
+            case "Table":
+                this.tableData = res.queryResult;
+                console.log("tableData: ", this.tableData);
+                this.tableVisualize();
+                return;
             case "Bar Chart":
+                this.onShowChart(botAnswer);
                 this.BarChart();
-                this.answerText = "Your Bar Chart is on the way!";
-                break;
+                return;
             case "Pie Chart":
+                this.onShowChart(botAnswer);
                 this.PieChart();
-                this.answerText = "Your Pie Chart is on the way!";
-                break;
+                return;
             case "Radar Chart":
+                this.onShowChart(botAnswer);
                 this.radarChart();
-                this.answerText = "Your Radar Chart is on the way!";
-                break;
+                return;
             case "3D Chart":
+                this.onShowChart(botAnswer);
                 this.BarChart3D();
-                this.answerText = "Your 3D Chart is on the way!";
+                return;
         }
 
         // Normal qna response without data
-        this.answerText = botAnswer;
-        this.allAnswers.push(botAnswer);
+        this.allConversations[this.conversationIndex].answer = botAnswer;
+        this.conversationIndex++;
         if (res.qna.answers[0].context) {
             for (let prompt of res.qna.answers[0].context.prompts) {
                 this.prompts.push(prompt.displayText);
@@ -171,6 +173,8 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy {
 
         this.dataSource.loadData(this.tableData, this.measurable);
         this.showTable = true;
+        this.allConversations[this.conversationIndex].answer = 'Please find the table below!'
+        this.conversationIndex++;
     }
 
     loadTDataPage() {
@@ -188,8 +192,9 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy {
         this.zone.runOutsideAngular(() => {
             let chart = am4core.create("chartdiv", am4charts.XYChart);
             am4core.options.minPolylineStep = 5;
+            chart.svgContainer.htmlElement.style.height = "60vh";
+            chart.svgContainer.htmlElement.style.width = "100%";
             chart.data = this.chartData;
-
             let dateAxis = chart.xAxes.push(new am4charts.DateAxis());
             dateAxis.title.text = "Dates";
 
@@ -268,6 +273,15 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy {
             this.amRadarChart = chart;  
             this.showChart = true;
         });
+    }
+
+    private onShowChart(chartName: string) {
+        this.allConversations[this.conversationIndex].answer = `Your ${chartName} is on the way!`
+        this.conversationIndex++;
+    }
+
+    public answerPrompt(prompt: string) {
+        this.promptAnswered.emit(prompt);
     }
 
     ngOnDestroy() {

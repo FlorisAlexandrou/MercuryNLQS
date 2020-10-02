@@ -3,6 +3,7 @@ import { ApiService } from '../api.service';
 import { Answer } from '../models/Answer.model'
 import { MatSlideToggleChange } from '@angular/material/slide-toggle';
 import { Subscription } from 'rxjs';
+import { FormControl } from '@angular/forms';
 
 @Component({
   selector: 'app-UserInput-component',
@@ -20,7 +21,7 @@ export class UserInputComponent implements OnInit, OnDestroy{
 
     private subscriptions: Subscription[] = [];
     private debug: boolean = false;
-
+    questionFC = new FormControl('');
     constructor(private apiService: ApiService) { }
 
     ngOnInit() { }
@@ -30,16 +31,22 @@ export class UserInputComponent implements OnInit, OnDestroy{
         this.subscriptions.push(this.apiService.getText().subscribe((res) => {
             this.resultSpeech2Text = res
             this.listening = false;
-            if (res && res != "Speech could not be recognized.")
-              this.getAnswer(res);
+            if (res && res != "Speech could not be recognized.") {
+                this.questionFC.setValue(res);
+                this.getAnswer();
+            }
         }));
     }
 
-    public getAnswer(question: string) {
-        if (question) {
-            this.submittedQuestion = question;
+    public getAnswer() {
+        const _question = this.questionFC.value;
+        if (_question) {
+            this.submittedQuestion = _question;
+            this.questionFC.setValue('');
+            this.questionFC.markAsUntouched();
+            this.questionFC.markAsPristine();
             this.thinking = true;
-            this.subscriptions.push(this.apiService.getAnswer(question, this.voiceOutput).subscribe((res) => {
+            this.subscriptions.push(this.apiService.getAnswer(_question, this.voiceOutput).subscribe((res) => {
                 this.responseAnswer = res;
                 this.thinking = false;
             }));
@@ -53,6 +60,11 @@ export class UserInputComponent implements OnInit, OnDestroy{
     // Logging for testing
     public log(value: string) {
         console.log(value);
+    }
+
+    answerPrompt(answerToQuestion: string) {
+        this.questionFC.setValue(answerToQuestion);
+        this.getAnswer();
     }
 
     ngOnDestroy() {

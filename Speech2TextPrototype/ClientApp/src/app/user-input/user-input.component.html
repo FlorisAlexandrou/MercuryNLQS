@@ -3,10 +3,13 @@
 
 <div class="flexContainer">
 
-  <input type="text" class="inputField" placeholder="Place your query here"
-         [(ngModel)]="question" #ctrl="ngModel" (keydown.enter)="getAnswer(question)"
-         [value]="resultSpeech2Text" required>
-  <button class="btn btn-primary mr-1" (click)="getAnswer(question)">Ask!</button>
+  <input type="text"
+         class="inputField"
+         placeholder="Place your query here"
+         required
+         (keydown.enter)="getAnswer()"
+         [formControl]="questionFC">
+  <button class="btn btn-primary mr-1" (click)="getAnswer()">Ask!</button>
 
   <span id="speech" class="btn" (click)="Speech2Text()">
     <i class="fa fa-microphone"></i>
@@ -15,9 +18,9 @@
 </div>
 
 <!-- Input Validation -->
-<div *ngIf="ctrl.invalid && (ctrl.dirty || ctrl.touched)">
+<div *ngIf="questionFC.invalid && (questionFC.dirty || questionFC.touched)">
 
-  <div *ngIf="ctrl.errors.required" class="text-danger">
+  <div *ngIf="questionFC.errors.required" class="text-danger">
     A question is required.
   </div>
 </div>
@@ -25,6 +28,8 @@
 <br />
 <mat-slide-toggle color="primary" (change)="toggleVoice($event)">Voice Output</mat-slide-toggle>
 <br />
-<div [hidden]="!thinking" class="lds-facebook"><div></div><div></div><div></div></div>
 
-<app-visualization [answer]="responseAnswer" [question]="submittedQuestion"></app-visualization>
+<app-visualization (promptAnswered)="answerPrompt($event)" [answer]="responseAnswer" [question]="submittedQuestion">
+  <div *ngIf="thinking" class="lds-facebook"><div></div><div></div><div></div></div>
+</app-visualization>
+
