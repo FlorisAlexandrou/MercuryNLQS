@@ -10,5 +10,8 @@ namespace Speech2TextPrototype.Repositories
     public interface ILookupValuesRepository
     {
         public LookupOutputModel token2Sql(PyRes res);
+
+        public List<DisplayTable> GroupByFilters(string query, string groupByFilter);
+
     }
 }

@@ -7,6 +7,7 @@
          class="inputField"
          placeholder="Place your query here"
          required
+         autofocus
          (keydown.enter)="getAnswer()"
          [formControl]="questionFC">
   <button class="btn btn-primary mr-1" (click)="getAnswer()">Ask!</button>
@@ -17,19 +18,14 @@
   </span>
 </div>
 
-<!-- Input Validation -->
-<div *ngIf="questionFC.invalid && (questionFC.dirty || questionFC.touched)">
-
-  <div *ngIf="questionFC.errors.required" class="text-danger">
-    A question is required.
-  </div>
-</div>
-
 <br />
 <mat-slide-toggle color="primary" (change)="toggleVoice($event)">Voice Output</mat-slide-toggle>
 <br />
 
-<app-visualization (promptAnswered)="answerPrompt($event)" [answer]="responseAnswer" [question]="submittedQuestion">
+<app-visualization [answer]="responseAnswer"
+                   [question]="submittedQuestion"
+                   (promptAnswered)="answerPrompt($event)"
+                   (sqlQueryComposed)="saveQuery($event)">
   <div *ngIf="thinking" class="lds-facebook"><div></div><div></div><div></div></div>
 </app-visualization>
 

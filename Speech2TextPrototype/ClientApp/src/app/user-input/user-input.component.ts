@@ -18,7 +18,7 @@ export class UserInputComponent implements OnInit, OnDestroy{
     private responseAnswer: Answer;
     private question: string;
     private submittedQuestion: string;
-
+    private sqlQuery = '';
     private subscriptions: Subscription[] = [];
     private debug: boolean = false;
     questionFC = new FormControl('');
@@ -46,7 +46,7 @@ export class UserInputComponent implements OnInit, OnDestroy{
             this.questionFC.markAsUntouched();
             this.questionFC.markAsPristine();
             this.thinking = true;
-            this.subscriptions.push(this.apiService.getAnswer(_question, this.voiceOutput).subscribe((res) => {
+            this.subscriptions.push(this.apiService.getAnswer(_question, this.sqlQuery, this.voiceOutput).subscribe((res) => {
                 this.responseAnswer = res;
                 this.thinking = false;
             }));
@@ -62,9 +62,13 @@ export class UserInputComponent implements OnInit, OnDestroy{
         console.log(value);
     }
 
-    answerPrompt(answerToQuestion: string) {
+    public answerPrompt(answerToQuestion: string) {
         this.questionFC.setValue(answerToQuestion);
         this.getAnswer();
+    }
+
+    public saveQuery(query: string) {
+        this.sqlQuery = query;
     }
 
     ngOnDestroy() {

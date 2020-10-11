@@ -4,6 +4,7 @@ using Speech2TextPrototype.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Speech2TextPrototype.Repositories
@@ -72,12 +73,12 @@ namespace Speech2TextPrototype.Repositories
 
             double scalar = -1;
 
-            var result = _context.tdata.FromSqlRaw(query);
-
             // Check for scalar values (Max, Sum, etc.)
             // Uses reflection for the measurable to avoid numerous if statements (x3 code)
-            if (!String.IsNullOrEmpty(aggregateFunction) && result.Any())
-            {
+            //if (!String.IsNullOrEmpty(aggregateFunction) && result.Any())
+            if (!String.IsNullOrEmpty(aggregateFunction))
+                {
+                var result = _context.tdata.FromSqlRaw(query).ToList();
                 Type type = typeof(TData);
 
                 switch (aggregateFunction)
@@ -96,24 +97,10 @@ namespace Speech2TextPrototype.Repositories
                         break;
                 }
 
-                return new LookupOutputModel { data = new List<DisplayTable>(), measures = listMeasures, dates = listDates, querySql = query, scalarValue = scalar };
+                return new LookupOutputModel { measures = listMeasures, dates = listDates, querySql = query, scalarValue = scalar };
             }
 
-            var dt = result.Select(r => new DisplayTable()
-            {
-                BRAND = r.BRAND,
-                CATEGORY_NAME = r.CATEGORY_NAME,
-                PERIOD_START = r.PERIOD_START,
-                QUANTITY = r.QUANTITY,
-                PRICE = r.PRICE,
-                SIZE = r.SIZE
-            }).ToList();
-
-            // Insert results into displayTable to allow for serverside pagination,filtering etc
-            _context.Database.ExecuteSqlRaw("TRUNCATE TABLE [DISPLAY_TABLE]");
-            _context.displayTable.AddRange(dt);
-            _context.SaveChanges();
-            return new LookupOutputModel { data = dt, measures = listMeasures, dates = listDates, querySql = query, scalarValue = scalar };
+            return new LookupOutputModel { measures = listMeasures, dates = listDates, querySql = query, scalarValue = scalar };
         }
     
 
@@ -340,6 +327,7 @@ namespace Speech2TextPrototype.Repositories
                     wheres += " AND ";
                 wheres += listWhereStatements.Aggregate((i, j) => i + " AND " + j);
             }
+
             // Construct Query
             query = "SELECT * FROM TDATA";
 
@@ -347,6 +335,40 @@ namespace Speech2TextPrototype.Repositories
                 query += " WHERE " + wheres;
 
             return query;
+        }
+
+        public List<DisplayTable> GroupByFilters (string query, string groupByFilter)
+        {
+            string selectStatement = "SELECT SUM(M_SALES_VALUE) AS M_SALES_VALUE, " +
+                                     "SUM(M_SALES_VOLUME) AS M_SALES_VOLUME, " +
+                                     "COUNT(M_SALES_ITEMS) AS M_SALES_ITEMS, " +
+                                     "PERIOD_START, " + groupByFilter;
+
+            if (groupByFilter == "PRODUCT_NAME")
+                selectStatement += ", MAX(CATEGORY_NAME) AS CATEGORY_NAME, MAX(BRAND) AS BRAND";
+            else if (groupByFilter == "CATEGORY_NAME")
+                selectStatement += ", MAX(PRODUCT_NAME) AS PRODUCT_NAME, MAX(BRAND) AS BRAND";
+            else if (groupByFilter == "BRAND")
+                selectStatement += ", MAX(CATEGORY_NAME) AS CATEGORY_NAME, MAX(PRODUCT_NAME) AS PRODUCT_NAME";
+
+            string fromStatement = " FROM TDATA ";
+            string whereStatement = "WHERE " + query.Split(new[] { "WHERE" }, StringSplitOptions.None)[1];
+            string groupByStatement = " GROUP BY PERIOD_START, " + groupByFilter;
+            var result2 = _context.tdata.FromSqlRaw(selectStatement + fromStatement + whereStatement + groupByStatement);
+            var dt = result2.Select(r => new DisplayTable()
+            {
+                BRAND = r.BRAND,
+                CATEGORY_NAME = r.CATEGORY_NAME,
+                PRODUCT_NAME = r.PRODUCT_NAME,
+                PERIOD_START = r.PERIOD_START,
+                M_SALES_VALUE = r.M_SALES_VALUE,
+                M_SALES_VOLUME = r.M_SALES_VOLUME,
+                M_SALES_ITEMS = r.M_SALES_ITEMS
+            }).ToList();
+            _context.Database.ExecuteSqlRaw("TRUNCATE TABLE [DISPLAY_TABLE]");
+            _context.displayTable.AddRange(dt);
+            _context.SaveChanges();
+            return dt;
         }
     }
 }

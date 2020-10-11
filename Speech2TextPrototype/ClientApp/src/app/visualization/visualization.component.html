@@ -51,6 +51,11 @@
           <mat-cell *matCellDef="let row">{{row.categorY_NAME}}</mat-cell>
         </ng-container>
 
+        <ng-container matColumnDef="productName">
+          <mat-header-cell *matHeaderCellDef mat-sort-header>Product Name</mat-header-cell>
+          <mat-cell *matCellDef="let row">{{row.producT_NAME}}</mat-cell>
+        </ng-container>
+
         <ng-container matColumnDef="periodStart">
           <mat-header-cell *matHeaderCellDef mat-sort-header>Period Start</mat-header-cell>
           <mat-cell *matCellDef="let row">{{row.perioD_START | date}} </mat-cell>
@@ -58,7 +63,7 @@
 
         <ng-container *ngIf="measurable == 'M_SALES_VALUE' || measurable == ''" matColumnDef="sales">
           <mat-header-cell *matHeaderCellDef mat-sort-header>Sales</mat-header-cell>
-          <mat-cell *matCellDef="let row">{{ row.m_SALES_VALUE }}</mat-cell>
+          <mat-cell *matCellDef="let row">{{ row.m_SALES_VALUE | number:'.2'}}</mat-cell>
         </ng-container>
 
         <ng-container *ngIf="measurable == 'M_SALES_VOLUME'" matColumnDef="sales">

@@ -17,7 +17,9 @@ export class ApiService {
         return this.httpClient.get<string>(this.webUrl + this.apiUrl);
     }
 
-    public getAnswer(question: string, voice: boolean):Observable<Answer> {
+    public getAnswer(question: string, sqlQuery: string, voice: boolean): Observable<Answer> {
+        if (sqlQuery)
+            return this.httpClient.get(this.webUrl + this.apiUrl + `/token/${question}?voiceoutput=${voice}&sqlQuery=${sqlQuery}`);
         return this.httpClient.get(this.webUrl + this.apiUrl + `/token/${question}?voiceoutput=${voice}`);
     }
 

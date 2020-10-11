@@ -5,6 +5,6 @@ export interface Answer {
     qna?: qna;
     queryResult?: DisplayTable[];
     listMeasures?: string[];
-    query?: string;
+    sqlQuery?: string;
     scalar?: number;
 }

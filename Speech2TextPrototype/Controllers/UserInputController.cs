@@ -75,10 +75,11 @@ namespace Speech2TextPrototype.Controllers
         /// </summary>
         /// <param name="sentence">The user's question/query</param>
         /// <param name="voiceOutput">Indicates whether the answer should be sent as speech</param>
+        /// <param name="sqlQuery">Generated query which is passed back to the backend for execution</param>
         /// <returns>Json object that either contains bot answer or DB query answer</returns>
         [HttpGet]
         [Route("token/{sentence}")]
-        public async Task<IActionResult> HandleUserQuery(string sentence, bool voiceOutput)
+        public async Task<IActionResult> HandleUserQuery(string sentence, bool voiceOutput, string sqlQuery)
         {
             string url = "https://tokens-api.herokuapp.com/tokenize/";
             int responseThershold = 3000;
@@ -86,8 +87,6 @@ namespace Speech2TextPrototype.Controllers
             LookupOutputModel lookupOutput = new LookupOutputModel();
             List<DisplayTable> queryResult = new List<DisplayTable>();
             List<string> listMeasures = new List<string>();
-            List<string> listDates = new List<string>();
-            string query = "";
             string error = "";
             double scalar = -1;
 
@@ -96,30 +95,19 @@ namespace Speech2TextPrototype.Controllers
                 // Tokenize Sentence
                 var httpResponse = await client.GetStringAsync(url + sentence);
                 PyRes res = JsonConvert.DeserializeObject<PyRes>(httpResponse);
-                // Return either a table or a bot answer
+
                 if (res.isSqlQuery)
                 {
-                    lookupOutput = _lookupValuesService.token2Sql(res);
-
-                    queryResult = lookupOutput.data;
-                    listMeasures = lookupOutput.measures;
-                    query = lookupOutput.querySql;
-                    listDates = lookupOutput.dates;
-                    scalar = lookupOutput.scalarValue;
+                    lookupOutput = _lookupValuesService.Token2Sql(res);
+                    sqlQuery = lookupOutput.querySql;
 
                     // Error Handling
-                    error = _lookupValuesService.HandleErrors(queryResult.Count(), listMeasures.Count(), listDates.Count(), scalar);
+                    error = _lookupValuesService.HandleErrors(lookupOutput);
 
                     if (!String.IsNullOrEmpty(error))
-                    {
                         qna = GetQnA(error, voiceOutput);
-                    }
-
-                    else if (queryResult.Any() && queryResult.Count() <= responseThershold)
-                    {
-                        qna = GetQnA("Output Type", voiceOutput);
-                    }
-
+                    else                     
+                        qna = GetQnA("Granularity Type", voiceOutput);
                 }
                 else
                     qna = GetQnA(sentence, voiceOutput);
@@ -140,14 +128,21 @@ namespace Speech2TextPrototype.Controllers
                     else if (botAnswer == "M_SALES_VALUE" || botAnswer == "M_SALES_VOLUME" || botAnswer == "M_SALES_ITEMS")
                     {
                         listMeasures.Add(botAnswer);
-                        queryResult = _displayTableService.GetTableData();
-                        if (queryResult.Count() <= responseThershold)
+                        qna = GetQnA("Granularity Type", voiceOutput);
+                    }
+
+                    else if (botAnswer == "PRODUCT_NAME" || botAnswer == "CATEGORY_NAME" || botAnswer == "BRAND")
+                    {
+                        queryResult = _lookupValuesService.GroupByFilters(sqlQuery, botAnswer);
+                        if (queryResult.Count() == 0)
+                            qna = GetQnA("ERROR:No Query Result", voiceOutput);
+                        else if (queryResult.Count() <= responseThershold)
                             qna = GetQnA("Output Type", voiceOutput);
                     }
                     else
                         queryResult = null;
                 }
-                return Ok(new { queryResult, listMeasures, qna, query, scalar });
+                return Ok(new { queryResult, listMeasures, qna, sqlQuery, scalar });
 
             }
         }

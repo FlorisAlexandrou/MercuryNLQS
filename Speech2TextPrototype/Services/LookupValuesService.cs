@@ -15,11 +15,17 @@ namespace Speech2TextPrototype.Services
         {
             _lookupValuesRepository = lookupValuesRepository;
         }
-        public LookupOutputModel token2Sql(PyRes res)
+        public LookupOutputModel Token2Sql(PyRes res)
         {
 
             return _lookupValuesRepository.token2Sql(res);
         }
+
+        public List<DisplayTable> GroupByFilters(string query, string groupByFilter)
+        {
+            return _lookupValuesRepository.GroupByFilters(query, groupByFilter);
+        }
+
 
         /// <summary>
         /// Sends error codes to qnamaker and then the qnamaker sends helpful messages to the user
@@ -27,8 +33,12 @@ namespace Speech2TextPrototype.Services
         /// <param name="queryResult">The data returned from the TData table</param>
         /// <param name="listMeasures">A list of measures to display (sales)</param>
         /// <returns>Custom error code string for the qnamaker</returns>
-        public string HandleErrors(int queryResultLen, int listMeasuresLen, int listDatesLen, double scalar)
+        public string HandleErrors(LookupOutputModel lookupOutput)
         {
+            int listMeasuresLen = lookupOutput.measures.Count();
+            int listDatesLen = lookupOutput.dates.Count();
+            double scalar = lookupOutput.scalarValue;
+
             if (listMeasuresLen == 0)
             {
                 return "ERROR:No List Measures";
@@ -37,11 +47,6 @@ namespace Speech2TextPrototype.Services
             {
                 return "WARNING:No List Dates";
             }
-            else if (queryResultLen == 0 && scalar == -1)
-            {
-                return "ERROR:No Query Result";
-            }
-
             return string.Empty;
         }
     }
