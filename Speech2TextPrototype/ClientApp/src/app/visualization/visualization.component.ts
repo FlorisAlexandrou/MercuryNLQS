@@ -30,6 +30,7 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy {
 
     @Input('answer') answer: Answer;
     @Input('question') question: string;
+    @Input('uuid') uuid: string;
     @Output('promptAnswered') promptAnswered = new EventEmitter<string>();
     @Output('sqlQueryComposed') sqlQueryComposed = new EventEmitter<string>();
     generatedQueryText = '';
@@ -46,7 +47,8 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy {
     constructor(private zone: NgZone, private api: ApiService) { }
 
     ngOnInit() {
-        this.dataSource = new VisualizationDataSource(this.api);
+        this.dataSource = new VisualizationDataSource(this.api, this.uuid);
+        window.onbeforeunload = () => this.ngOnDestroy();
     }
 
     ngOnChanges(changes: SimpleChanges) {
@@ -82,7 +84,7 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy {
              this.subscriptions.forEach(sub => sub.unsubscribe());
              this.tableData = [];
              this.generatedQueryText = '';
-             this.dataSource = new VisualizationDataSource(this.api);
+             this.dataSource = new VisualizationDataSource(this.api, this.uuid);
          }
     }
 
@@ -152,6 +154,7 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy {
             case "Line Chart":
                 this.onShowChart(botAnswer);
                 this.lineChart();
+                return;
         }
 
         // Normal qna response without data
@@ -341,6 +344,8 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     ngOnDestroy() {
+        // Clear table on user exit/page refresh
+        this.api.deleteTable(this.uuid).subscribe();
         this.subscriptions.forEach(sub => sub.unsubscribe());
     }
 }

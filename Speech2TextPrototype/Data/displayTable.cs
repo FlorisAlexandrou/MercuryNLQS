@@ -9,9 +9,9 @@ namespace Speech2TextPrototype.Data
 {
     public class DisplayTable
     {
-        [Key]
+        public string UUID { get; set; }
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int ROW { get; set; }
+        public int ROWNUMBER { get; set; }
         public string BRAND { get; set; }
         public string CATEGORY_NAME { get; set; }
         public string PRODUCT_NAME { get; set; }

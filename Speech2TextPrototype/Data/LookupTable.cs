@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Speech2TextPrototype.Data
 {
-    public class LookupValues
+    public class LookupTable
     {
         public string Value { get; set; }
         public string Type { get; set; }

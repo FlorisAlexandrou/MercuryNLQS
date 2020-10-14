@@ -24,6 +24,7 @@
 
 <app-visualization [answer]="responseAnswer"
                    [question]="submittedQuestion"
+                   [uuid]="uuid"
                    (promptAnswered)="answerPrompt($event)"
                    (sqlQueryComposed)="saveQuery($event)">
   <div *ngIf="thinking" class="lds-facebook"><div></div><div></div><div></div></div>

@@ -24,16 +24,16 @@ namespace Speech2TextPrototype.Controllers
     [Produces("application/json")]
     public class UserInputController : ControllerBase
     {
-        private readonly ILookupValuesService _lookupValuesService;
+        private readonly ILookupTableService _lookupTableService;
         private readonly IDisplayTableService _displayTableService;
 
         private static readonly SpeechConfig speechConfig = SpeechConfig.FromSubscription(
                     "38df3e4febac4df48490c9f3d8eaa23f",
                     "eastus");
 
-        public UserInputController(ILookupValuesService lookupValuesService, IDisplayTableService displayTableService)
+        public UserInputController(ILookupTableService lookupTableService, IDisplayTableService displayTableService)
         {
-            _lookupValuesService = lookupValuesService;
+            _lookupTableService = lookupTableService;
             _displayTableService = displayTableService;
         }
 
@@ -76,12 +76,13 @@ namespace Speech2TextPrototype.Controllers
         /// <param name="sentence">The user's question/query</param>
         /// <param name="voiceOutput">Indicates whether the answer should be sent as speech</param>
         /// <param name="sqlQuery">Generated query which is passed back to the backend for execution</param>
+        /// <param name="uuid">User ID to enable concurrent usage of the displayTable</param>
         /// <returns>Json object that either contains bot answer or DB query answer</returns>
         [HttpGet]
         [Route("token/{sentence}")]
-        public async Task<IActionResult> HandleUserQuery(string sentence, bool voiceOutput, string sqlQuery)
+        public async Task<IActionResult> HandleUserQuery(string sentence, string uuid, string sqlQuery, bool voiceOutput)
         {
-            string url = "https://tokens-api.herokuapp.com/tokenize/";
+            string pythonApiURL = "https://tokens-api.herokuapp.com/tokenize/";
             int responseThershold = 3000;
             QnASearchResultList qna = new QnASearchResultList();
             LookupOutputModel lookupOutput = new LookupOutputModel();
@@ -93,16 +94,16 @@ namespace Speech2TextPrototype.Controllers
             using (HttpClient client = new HttpClient())
             {
                 // Tokenize Sentence
-                var httpResponse = await client.GetStringAsync(url + sentence);
+                var httpResponse = await client.GetStringAsync(pythonApiURL + sentence);
                 PyRes res = JsonConvert.DeserializeObject<PyRes>(httpResponse);
 
                 if (res.isSqlQuery)
                 {
-                    lookupOutput = _lookupValuesService.Token2Sql(res);
+                    lookupOutput = _lookupTableService.Token2Sql(res);
                     sqlQuery = lookupOutput.querySql;
-
+                    listMeasures = lookupOutput.measures;
                     // Error Handling
-                    error = _lookupValuesService.HandleErrors(lookupOutput);
+                    error = _lookupTableService.HandleErrors(lookupOutput);
 
                     if (!String.IsNullOrEmpty(error))
                         qna = GetQnA(error, voiceOutput);
@@ -117,12 +118,12 @@ namespace Speech2TextPrototype.Controllers
                     string botAnswer = qna.Answers[0].Answer;
                     if (botAnswer == "Table")
                     {
-                        queryResult = _displayTableService.GetTableData();
+                        queryResult = _displayTableService.GetTableData(uuid);
                     }
 
                     else if (botAnswer == "What type of chart?")
                     {
-                        queryResult = _displayTableService.GetChartData();
+                        queryResult = _displayTableService.GetChartData(uuid);
                     }
 
                     else if (botAnswer == "M_SALES_VALUE" || botAnswer == "M_SALES_VOLUME" || botAnswer == "M_SALES_ITEMS")
@@ -133,7 +134,7 @@ namespace Speech2TextPrototype.Controllers
 
                     else if (botAnswer == "PRODUCT_NAME" || botAnswer == "CATEGORY_NAME" || botAnswer == "BRAND")
                     {
-                        queryResult = _lookupValuesService.GroupByFilters(sqlQuery, botAnswer);
+                        queryResult = _lookupTableService.GroupByFilters(sqlQuery, botAnswer, uuid);
                         if (queryResult.Count() == 0)
                             qna = GetQnA("ERROR:No Query Result", voiceOutput);
                         else if (queryResult.Count() <= responseThershold)
@@ -143,7 +144,6 @@ namespace Speech2TextPrototype.Controllers
                         queryResult = null;
                 }
                 return Ok(new { queryResult, listMeasures, qna, sqlQuery, scalar });
-
             }
         }
 
@@ -190,16 +190,23 @@ namespace Speech2TextPrototype.Controllers
         /// <returns>Paged data back to the datatable</returns>
         [HttpGet]
         [Route("table/page")]
-        public List<DisplayTable> getPagedTable(int pageIndex, int pageSize)
+        public List<DisplayTable> getPagedTable(int pageIndex, int pageSize, string uuid)
         {
-            return _displayTableService.GetTablePaged(pageIndex, pageSize);
+            return _displayTableService.GetTablePaged(pageIndex, pageSize, uuid);
         }
 
         [HttpGet]
         [Route("table/sort")]
-        public List<DisplayTable> getSortedTable(string column, string sortOrder, int pageIndex, int pageSize)
+        public List<DisplayTable> getSortedTable(string column, string sortOrder, int pageIndex, int pageSize, string uuid)
         {
-            return _displayTableService.GetTableSorted(column, sortOrder, pageIndex, pageSize);
+            return _displayTableService.GetTableSorted(column, sortOrder, pageIndex, pageSize, uuid);
+        }
+
+        [HttpGet]
+        [Route("table/delete")]
+        public void deleteTable(string uuid)
+        {
+            _displayTableService.DeleteData(uuid);
         }
     }
 }

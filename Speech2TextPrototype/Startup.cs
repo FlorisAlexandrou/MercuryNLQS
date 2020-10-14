@@ -36,10 +36,10 @@ namespace Speech2TextPrototype
 
             // Dependency Injection
             // Repositories
-            services.AddTransient<ILookupValuesRepository, LookupValuesRepository>();
+            services.AddTransient<ILookupTableRepository, LookupTableRepository>();
             services.AddTransient<IDisplayTableRepository, DisplayTableRepository>();
             // Services
-            services.AddTransient<ILookupValuesService, LookupValuesService>();
+            services.AddTransient<ILookupTableService, LookupTableService>();
             services.AddTransient<IDisplayTableService, DisplayTableService>();
         }
 

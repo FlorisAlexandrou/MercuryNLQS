@@ -8,22 +8,22 @@ using System.Threading.Tasks;
 
 namespace Speech2TextPrototype.Services
 {
-    public class LookupValuesService : ILookupValuesService
+    public class LookupTableService : ILookupTableService
     {
-        private readonly ILookupValuesRepository _lookupValuesRepository = null;
-        public LookupValuesService(ILookupValuesRepository lookupValuesRepository)
+        private readonly ILookupTableRepository _lookupTableRepository = null;
+        public LookupTableService(ILookupTableRepository lookupTableRepository)
         {
-            _lookupValuesRepository = lookupValuesRepository;
+            _lookupTableRepository = lookupTableRepository;
         }
         public LookupOutputModel Token2Sql(PyRes res)
         {
 
-            return _lookupValuesRepository.token2Sql(res);
+            return _lookupTableRepository.token2Sql(res);
         }
 
-        public List<DisplayTable> GroupByFilters(string query, string groupByFilter)
+        public List<DisplayTable> GroupByFilters(string query, string groupByFilter, string uuid)
         {
-            return _lookupValuesRepository.GroupByFilters(query, groupByFilter);
+            return _lookupTableRepository.GroupByFilters(query, groupByFilter, uuid);
         }
 
 

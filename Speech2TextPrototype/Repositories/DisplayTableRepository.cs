@@ -15,14 +15,14 @@ namespace Speech2TextPrototype.Repositories
             _context = context;
         }
 
-        public List<DisplayTable> GetTableData()
+        public List<DisplayTable> GetTableData(string uuid)
         {
-            return _context.displayTable.ToList();
+            return _context.displayTable.Where(r => r.UUID == uuid).ToList();
         }
 
-        public List<DisplayTable> GetChartData()
+        public List<DisplayTable> GetChartData(string uuid)
         {
-            var chartData = _context.displayTable.Select(r => new DisplayTable() 
+            var chartData = _context.displayTable.Where(r => r.UUID == uuid).Select(r => new DisplayTable() 
             {
                 M_SALES_VALUE = r.M_SALES_VALUE,
                 M_SALES_ITEMS = r.M_SALES_ITEMS,
@@ -31,6 +31,12 @@ namespace Speech2TextPrototype.Repositories
             }).ToList();
 
             return chartData;
+        }
+
+        public void DeleteData(string uuid)
+        {
+            _context.displayTable.RemoveRange(GetTableData(uuid));
+            _context.SaveChanges();
         }
 
     }

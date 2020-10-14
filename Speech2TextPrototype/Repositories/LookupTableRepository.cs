@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Speech2TextPrototype.Repositories
 {
-    public class LookupValuesRepository : ILookupValuesRepository
+    public class LookupTableRepository : ILookupTableRepository
     {
         private readonly florisContext _context;
 
@@ -47,7 +47,7 @@ namespace Speech2TextPrototype.Repositories
         /// <summary>String which is used for Past X {Year, Month, Day}</summary>
         private string timeType = "";
 
-        public LookupValuesRepository(florisContext context)
+        public LookupTableRepository(florisContext context)
         {
             _context = context;
         }
@@ -113,7 +113,7 @@ namespace Speech2TextPrototype.Repositories
         {
             foreach (string bigram in bigrams)
             {
-                LookupValues bigramLookupValues = _context.lookupvalues.Where(row => row.Value == bigram).FirstOrDefault();
+                LookupTable bigramLookupValues = _context.lookupvalues.Where(row => row.Value == bigram).FirstOrDefault();
                 if (bigramLookupValues != null)
                 {
                     // Find Measurables
@@ -224,7 +224,7 @@ namespace Speech2TextPrototype.Repositories
                     }
                 }
 
-                LookupValues lookupValues = _context.lookupvalues.Where(row => row.Value == token).FirstOrDefault();
+                LookupTable lookupValues = _context.lookupvalues.Where(row => row.Value == token).FirstOrDefault();
                 if (lookupValues != null)
                 {
                     // Find Measurables
@@ -337,7 +337,7 @@ namespace Speech2TextPrototype.Repositories
             return query;
         }
 
-        public List<DisplayTable> GroupByFilters (string query, string groupByFilter)
+        public List<DisplayTable> GroupByFilters (string query, string groupByFilter, string uuid)
         {
             string selectStatement = "SELECT SUM(M_SALES_VALUE) AS M_SALES_VALUE, " +
                                      "SUM(M_SALES_VOLUME) AS M_SALES_VOLUME, " +
@@ -351,12 +351,23 @@ namespace Speech2TextPrototype.Repositories
             else if (groupByFilter == "BRAND")
                 selectStatement += ", MAX(CATEGORY_NAME) AS CATEGORY_NAME, MAX(PRODUCT_NAME) AS PRODUCT_NAME";
 
-            string fromStatement = " FROM TDATA ";
-            string whereStatement = "WHERE " + query.Split(new[] { "WHERE" }, StringSplitOptions.None)[1];
+            string fromStatement = " FROM TDATA";
+            string whereStatement = "";
+            if (query.Contains("WHERE"))
+                whereStatement = " WHERE " + query.Split(new[] { "WHERE" }, StringSplitOptions.None)[1];
             string groupByStatement = " GROUP BY PERIOD_START, " + groupByFilter;
+
+            // Delete previously generated results of current user
+            var toDelete = _context.displayTable.Where(r => r.UUID == uuid).ToList();
+            _context.displayTable.RemoveRange(toDelete);
+            _context.SaveChanges();
+
+
             var result2 = _context.tdata.FromSqlRaw(selectStatement + fromStatement + whereStatement + groupByStatement);
+
             var dt = result2.Select(r => new DisplayTable()
             {
+                UUID = uuid,
                 BRAND = r.BRAND,
                 CATEGORY_NAME = r.CATEGORY_NAME,
                 PRODUCT_NAME = r.PRODUCT_NAME,
@@ -365,7 +376,7 @@ namespace Speech2TextPrototype.Repositories
                 M_SALES_VOLUME = r.M_SALES_VOLUME,
                 M_SALES_ITEMS = r.M_SALES_ITEMS
             }).ToList();
-            _context.Database.ExecuteSqlRaw("TRUNCATE TABLE [DISPLAY_TABLE]");
+
             _context.displayTable.AddRange(dt);
             _context.SaveChanges();
             return dt;

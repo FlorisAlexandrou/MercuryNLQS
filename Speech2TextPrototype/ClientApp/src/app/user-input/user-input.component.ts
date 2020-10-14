@@ -22,9 +22,13 @@ export class UserInputComponent implements OnInit, OnDestroy{
     private subscriptions: Subscription[] = [];
     private debug: boolean = false;
     questionFC = new FormControl('');
+    private uuid = '';
+
     constructor(private apiService: ApiService) { }
 
-    ngOnInit() { }
+    ngOnInit() {
+        this.generate_UUID();
+    }
 
     public Speech2Text() {
         this.listening = true;
@@ -46,7 +50,7 @@ export class UserInputComponent implements OnInit, OnDestroy{
             this.questionFC.markAsUntouched();
             this.questionFC.markAsPristine();
             this.thinking = true;
-            this.subscriptions.push(this.apiService.getAnswer(_question, this.sqlQuery, this.voiceOutput).subscribe((res) => {
+            this.subscriptions.push(this.apiService.getAnswer(_question, this.sqlQuery, this.uuid, this.voiceOutput).subscribe((res) => {
                 this.responseAnswer = res;
                 this.thinking = false;
             }));
@@ -69,6 +73,15 @@ export class UserInputComponent implements OnInit, OnDestroy{
 
     public saveQuery(query: string) {
         this.sqlQuery = query;
+    }
+
+    private generate_UUID() {
+        var dt = new Date().getTime();
+        this.uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+            var r = (dt + Math.random() * 16) % 16 | 0;
+            dt = Math.floor(dt / 16);
+            return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        });
     }
 
     ngOnDestroy() {

@@ -20,7 +20,7 @@ export class VisualizationDataSource extends DataSource<DisplayTable> {
     public data: DisplayTable[] = [];
     private measurable: string;
 
-    constructor(private api : ApiService) {
+    constructor(private api : ApiService, private uuid: string) {
         super();
     }
 
@@ -57,7 +57,7 @@ export class VisualizationDataSource extends DataSource<DisplayTable> {
 
     public getPagedData(data: DisplayTable[]) {
         this.loadingSubject.next(true);
-        this.api.getPagedData(this.paginator.pageIndex, this.paginator.pageSize)
+        this.api.getPagedData(this.paginator.pageIndex, this.paginator.pageSize, this.uuid)
             .subscribe((res: any) => {
                 this.tdataSubject.next(res);
                 this.data = res;
@@ -71,8 +71,9 @@ export class VisualizationDataSource extends DataSource<DisplayTable> {
         if (this.sort.active == 'sales') {
             column = this.measurable;
         }
+        console.log(column);
 
-        this.api.getSortedData(column, this.sort.direction, this.paginator.pageIndex, this.paginator.pageSize)
+        this.api.getSortedData(column, this.sort.direction, this.paginator.pageIndex, this.paginator.pageSize, this.uuid)
             .subscribe((res: any) => {
                 console.log(res);
                 this.tdataSubject.next(res)

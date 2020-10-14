@@ -15,26 +15,26 @@ namespace Speech2TextPrototype.Services
         {
             _displayTableRepository = displayTableRepository;
         }
-        public List<DisplayTable> GetTableData()
+        public List<DisplayTable> GetTableData(string uuid)
         {
-            return _displayTableRepository.GetTableData();
+            return _displayTableRepository.GetTableData(uuid);
         }
 
-        public List<DisplayTable> GetChartData()
+        public List<DisplayTable> GetChartData(string uuid)
         {
-            return _displayTableRepository.GetChartData();
+            return _displayTableRepository.GetChartData(uuid);
         }
 
-        public List<DisplayTable> GetTablePaged(int pageIndex, int pageSize)
+        public List<DisplayTable> GetTablePaged(int pageIndex, int pageSize, string uuid)
         {
-            var data = _displayTableRepository.GetTableData();
+            var data = _displayTableRepository.GetTableData(uuid);
             var pagedData = data.Skip(pageIndex * pageSize).Take(pageSize).ToList();
             return pagedData;
         }
 
-        public List<DisplayTable> GetTableSorted(string column, string sortOrder, int pageIndex, int pageSize)
+        public List<DisplayTable> GetTableSorted(string column, string sortOrder, int pageIndex, int pageSize, string uuid)
         {
-            var data = _displayTableRepository.GetTableData();
+            var data = _displayTableRepository.GetTableData(uuid);
             if (!string.IsNullOrEmpty(sortOrder))
             {
                 switch (column)
@@ -78,6 +78,11 @@ namespace Speech2TextPrototype.Services
                 }
             }
             return data.Skip(pageIndex * pageSize).Take(pageSize).ToList();
+        }
+
+        public void DeleteData(string uuid)
+        {
+            _displayTableRepository.DeleteData(uuid);
         }
     }
 }

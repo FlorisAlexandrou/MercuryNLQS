@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 
 namespace Speech2TextPrototype.Repositories
 {
-    public interface ILookupValuesRepository
+    public interface ILookupTableRepository
     {
         public LookupOutputModel token2Sql(PyRes res);
 
-        public List<DisplayTable> GroupByFilters(string query, string groupByFilter);
+        public List<DisplayTable> GroupByFilters(string query, string groupByFilter, string uuid);
 
     }
 }
