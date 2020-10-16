@@ -257,6 +257,7 @@ namespace Speech2TextPrototype.Repositories
             string query = "";
             string measures = "";
             string wheres = "";
+            bool listDatesExist = listDates.Any();
 
             if (listMeasures.Any())
             {
@@ -273,10 +274,15 @@ namespace Speech2TextPrototype.Repositories
             // If past,last keyword is detected
             if (!String.IsNullOrEmpty(timeType))
             {
-                // Display last months or days of current year
-                if ((timeType == "month" || timeType == "day") && !listDates.Any())
+                if (!listDatesExist)
                 {
-                    wheres += timeType + "(PERIOD_START) between (" + timeType + "(getdate()) - " + timeNum + ") and getdate() and YEAR(PERIOD_START) = YEAR(getdate())";
+                    // Display last months or days of current year
+                    if (timeType == "month" || timeType == "day")
+                        wheres += timeType + "(PERIOD_START) between (" + timeType + "(getdate()) - " + timeNum + ") and getdate() and YEAR(PERIOD_START) = YEAR(getdate())";  
+                
+                    // Display last x years
+                    if (timeType == "year")
+                        wheres += timeType + "(PERIOD_START) between (" + timeType + "(getdate()) - " + timeNum + ") and getdate()";
                 }
                 // Display last months or days of specific year, e.g last 2 months of 2016
                 else
@@ -307,11 +313,11 @@ namespace Speech2TextPrototype.Repositories
             }
 
             // If dates are BETWEEN a certain range
-            else if (listDates.Any() && isBetween)
+            else if (listDatesExist && isBetween)
             {
                 wheres += listDates.Aggregate((i, j) => i.Split('=')[0] + "Between" + i.Split('=')[1] + " AND" + j.Split('=')[1]);
             }
-            else if (listDates.Any())
+            else if (listDatesExist)
             {
                 if (!String.IsNullOrEmpty(wheres))
                     wheres += " AND ";

@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, NgZone, Input, OnChanges, SimpleChanges, OnDestroy, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ViewChild, NgZone, Input, OnChanges, SimpleChanges, OnDestroy, Output, EventEmitter, ChangeDetectionStrategy, ElementRef, ViewChildren, QueryList, AfterViewInit } from '@angular/core';
 import { DisplayTable } from '../models/displayTable.model';
 import * as am4core from "@amcharts/amcharts4/core";
 import * as am4charts from "@amcharts/amcharts4/charts";
@@ -11,6 +11,7 @@ import { VisualizationDataSource } from './visualization-datasource';
 import { tap } from 'rxjs/operators';
 import { ApiService } from '../api.service';
 import { Subscription } from 'rxjs';
+import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 
 @Component({
   selector: 'app-visualization',
@@ -18,7 +19,7 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./visualization.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class VisualizationComponent implements OnInit, OnChanges, OnDestroy {
+export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, AfterViewInit {
     private XYChart: am4charts.XYChart;
     private amPieChart: am4charts.PieChart;
     private amRadarChart: am4charts.RadarChart;
@@ -33,6 +34,9 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy {
     @Input('uuid') uuid: string;
     @Output('promptAnswered') promptAnswered = new EventEmitter<string>();
     @Output('sqlQueryComposed') sqlQueryComposed = new EventEmitter<string>();
+    @ViewChild('scrollView', { static: false }) scrollView: CdkVirtualScrollViewport;
+    @ViewChildren('messages') messages: QueryList<any>;
+
     generatedQueryText = '';
     allConversations: Conversation[] = [];
     conversationIndex = 0;
@@ -49,6 +53,10 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy {
     ngOnInit() {
         this.dataSource = new VisualizationDataSource(this.api, this.uuid);
         window.onbeforeunload = () => this.ngOnDestroy();
+    }
+
+    ngAfterViewInit() {
+        this.messages.changes.subscribe(this.scrollToBottom);
     }
 
     ngOnChanges(changes: SimpleChanges) {
@@ -69,7 +77,6 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy {
         this.allConversations = [...this.allConversations, _conversation];
          // Reset UI when question is asked
          this.prompts = [];
-
          if (this.showChart) {
              //    this.zone.runOutsideAngular(() => {
              //        am4core.disposeAllCharts();
@@ -85,7 +92,7 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy {
              this.tableData = [];
              this.generatedQueryText = '';
              this.dataSource = new VisualizationDataSource(this.api, this.uuid);
-         }
+        }
     }
 
     handleAnswer() {
@@ -104,8 +111,8 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy {
 
         // Get Scalar Value (result of "sum", "avg" etc)
         if (res.scalar > 0) {
-            const _conversation: Conversation = { question: '', answer: res.scalar.toString() };
-            this.allConversations = [...this.allConversations, _conversation];
+            this.allConversations[this.conversationIndex].answer = res.scalar.toString();
+            this.conversationIndex++;
             return;
         }
 
@@ -116,7 +123,7 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy {
                 console.log(res.listMeasures);
                 console.log(res.queryResult);
                 this.tableData = res.queryResult;
-                this.allConversations[this.conversationIndex].answer = "This query result is suitable only for a table!"
+                this.allConversations[this.conversationIndex].answer = "A query with more than 3000 rows is suitable only for a table!"
                 this.conversationIndex++;
                 this.tableVisualize();
                 return;
@@ -343,9 +350,23 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy {
         this.promptAnswered.emit(prompt);
     }
 
+    scrollToBottom = () => {
+        try {
+            this.scrollView.scrollToIndex(this.allConversations.length, "smooth");
+        } catch (err) { }
+    }
+
+
     ngOnDestroy() {
         // Clear table on user exit/page refresh
         this.api.deleteTable(this.uuid).subscribe();
         this.subscriptions.forEach(sub => sub.unsubscribe());
+        this.zone.runOutsideAngular(() => {
+            if (this.XYChart) {
+                this.XYChart.dispose();
+            }
+            if (this.amPieChart)
+                this.amPieChart.dispose();
+        });
     }
 }

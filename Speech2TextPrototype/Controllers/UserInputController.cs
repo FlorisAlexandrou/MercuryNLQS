@@ -102,6 +102,10 @@ namespace Speech2TextPrototype.Controllers
                     lookupOutput = _lookupTableService.Token2Sql(res);
                     sqlQuery = lookupOutput.querySql;
                     listMeasures = lookupOutput.measures;
+                    scalar = lookupOutput.scalarValue;
+                    if (scalar != -1)
+                        return Ok(new { queryResult, listMeasures, qna, sqlQuery, scalar });
+
                     // Error Handling
                     error = _lookupTableService.HandleErrors(lookupOutput);
 
