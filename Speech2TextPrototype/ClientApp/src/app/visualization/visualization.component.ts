@@ -24,8 +24,8 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
     private amPieChart: am4charts.PieChart;
     private amRadarChart: am4charts.RadarChart;
 
-    @ViewChild(MatPaginator, { static: false }) paginator: MatPaginator;
-    @ViewChild('sortData', { static: false }) sort: MatSort;
+    @ViewChild(MatPaginator) paginator: MatPaginator;
+    @ViewChild('sortData') sort: MatSort;
     dataSource: VisualizationDataSource;
     displayedColumns = ['brand', 'categoryName', 'productName', 'periodStart', 'sales'];
 
@@ -34,7 +34,7 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
     @Input('uuid') uuid: string;
     @Output('promptAnswered') promptAnswered = new EventEmitter<string>();
     @Output('sqlQueryComposed') sqlQueryComposed = new EventEmitter<string>();
-    @ViewChild('scrollView', { static: false }) scrollView: CdkVirtualScrollViewport;
+    @ViewChild('scrollView') scrollView: CdkVirtualScrollViewport;
     @ViewChildren('messages') messages: QueryList<any>;
 
     generatedQueryText = '';
