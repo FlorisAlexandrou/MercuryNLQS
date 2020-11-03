@@ -15,6 +15,7 @@ using Microsoft.Azure.CognitiveServices.Knowledge.QnAMaker.Models;
 using Speech2TextPrototype.Data;
 using Newtonsoft.Json;
 using Speech2TextPrototype.Services;
+using System.Text.RegularExpressions;
 
 namespace Speech2TextPrototype.Controllers
 {
@@ -42,7 +43,6 @@ namespace Speech2TextPrototype.Controllers
         /// Recognize speech from microphone
         /// </summary>
         /// <returns>A string of recognized speech</returns>
-        // GET: api/UserInput
         [HttpGet]
         public async Task<ActionResult> RecognizeSpeech()
         {
@@ -83,72 +83,73 @@ namespace Speech2TextPrototype.Controllers
         public async Task<IActionResult> HandleUserQuery(string sentence, string uuid, string sqlQuery, bool voiceOutput)
         {
             string pythonApiURL = "https://tokens-api.herokuapp.com/tokenize/";
+            /// The maximum rows of data that are allowed to be returned to the frontend
             int responseThershold = 3000;
+            /// QnA Maker object which contains the answer
             QnASearchResultList qna = new QnASearchResultList();
-            LookupOutputModel lookupOutput = new LookupOutputModel();
+            /// The data object returned to the frontend
             List<DisplayTable> queryResult = new List<DisplayTable>();
+            /// The list of measures that the database supports
             List<string> listMeasures = new List<string>();
-            string error = "";
+            /// Value returned by algebraic and distributive measures (sum, avg, etc)
             double scalar = -1;
 
-            using (HttpClient client = new HttpClient())
+            using HttpClient client = new HttpClient();
+            // Tokenize Sentence
+            var httpResponse = await client.GetStringAsync(pythonApiURL + sentence);
+            PyRes res = JsonConvert.DeserializeObject<PyRes>(httpResponse);
+
+            if (res.isSqlQuery)
             {
-                // Tokenize Sentence
-                var httpResponse = await client.GetStringAsync(pythonApiURL + sentence);
-                PyRes res = JsonConvert.DeserializeObject<PyRes>(httpResponse);
+                LookupOutputModel lookupOutput = _lookupTableService.Token2Sql(res);
+                sqlQuery = lookupOutput.querySql;
+                listMeasures = lookupOutput.measures;
+                scalar = lookupOutput.scalarValue;
+                if (scalar != -1)
+                    return Ok(new { queryResult, listMeasures, qna, sqlQuery, scalar });
 
-                if (res.isSqlQuery)
+                // Error Handling
+                string error = _lookupTableService.HandleErrors(lookupOutput);
+
+                if (!String.IsNullOrEmpty(error))
+                    qna = GetQnA(error, voiceOutput);
+                else
+                    qna = GetQnA("Granularity Type", voiceOutput);
+            }
+            else
+                qna = GetQnA(sentence, voiceOutput);
+
+            if (qna.Answers != null)
+            {
+                string botAnswer = qna.Answers[0].Answer;
+                if (botAnswer == "Table")
                 {
-                    lookupOutput = _lookupTableService.Token2Sql(res);
-                    sqlQuery = lookupOutput.querySql;
-                    listMeasures = lookupOutput.measures;
-                    scalar = lookupOutput.scalarValue;
-                    if (scalar != -1)
-                        return Ok(new { queryResult, listMeasures, qna, sqlQuery, scalar });
+                    queryResult = _displayTableService.GetTableData(uuid);
+                }
 
-                    // Error Handling
-                    error = _lookupTableService.HandleErrors(lookupOutput);
+                else if (botAnswer == "What type of chart?")
+                {
+                    queryResult = _displayTableService.GetChartData(uuid);
+                }
 
-                    if (!String.IsNullOrEmpty(error))
-                        qna = GetQnA(error, voiceOutput);
-                    else                     
-                        qna = GetQnA("Granularity Type", voiceOutput);
+                else if (botAnswer == "M_SALES_VALUE" || botAnswer == "M_SALES_VOLUME" || botAnswer == "M_SALES_ITEMS")
+                {
+                    listMeasures.Add(botAnswer);
+                    qna = GetQnA("Granularity Type", voiceOutput);
+                }
+
+                else if (botAnswer == "PRODUCT_NAME" || botAnswer == "CATEGORY_NAME" || botAnswer == "BRAND")
+                {
+                    queryResult = _lookupTableService.GroupByFilters(sqlQuery, botAnswer, uuid);
+                    if (queryResult.Count() == 0)
+                        qna = GetQnA("ERROR:No Query Result", voiceOutput);
+                    else if (queryResult.Count() <= responseThershold)
+                        qna = GetQnA("Output Type", voiceOutput);
                 }
                 else
-                    qna = GetQnA(sentence, voiceOutput);
-
-                if (qna.Answers != null)
-                {
-                    string botAnswer = qna.Answers[0].Answer;
-                    if (botAnswer == "Table")
-                    {
-                        queryResult = _displayTableService.GetTableData(uuid);
-                    }
-
-                    else if (botAnswer == "What type of chart?")
-                    {
-                        queryResult = _displayTableService.GetChartData(uuid);
-                    }
-
-                    else if (botAnswer == "M_SALES_VALUE" || botAnswer == "M_SALES_VOLUME" || botAnswer == "M_SALES_ITEMS")
-                    {
-                        listMeasures.Add(botAnswer);
-                        qna = GetQnA("Granularity Type", voiceOutput);
-                    }
-
-                    else if (botAnswer == "PRODUCT_NAME" || botAnswer == "CATEGORY_NAME" || botAnswer == "BRAND")
-                    {
-                        queryResult = _lookupTableService.GroupByFilters(sqlQuery, botAnswer, uuid);
-                        if (queryResult.Count() == 0)
-                            qna = GetQnA("ERROR:No Query Result", voiceOutput);
-                        else if (queryResult.Count() <= responseThershold)
-                            qna = GetQnA("Output Type", voiceOutput);
-                    }
-                    else
-                        queryResult = null;
-                }
-                return Ok(new { queryResult, listMeasures, qna, sqlQuery, scalar });
+                    queryResult = null;
             }
+            return Ok(new { queryResult, listMeasures, qna, sqlQuery, scalar });
         }
 
         /// <summary>
@@ -164,7 +165,7 @@ namespace Speech2TextPrototype.Controllers
             var endpointhostName = "https://floris-qnaservice.azurewebsites.net";
             var endpointKey = "f3536082-ee9c-408f-9948-1fb77b30c0c6";
             string kbId = "f158eca8-f7f3-4c88-a7d7-b7724956df4c";
-            var runtimeClient = new QnAMakerRuntimeClient(new EndpointKeyServiceClientCredentials(endpointKey)) { RuntimeEndpoint = endpointhostName };
+            using var runtimeClient = new QnAMakerRuntimeClient(new EndpointKeyServiceClientCredentials(endpointKey)) { RuntimeEndpoint = endpointhostName };
             var response = runtimeClient.Runtime.GenerateAnswerAsync(kbId, new QueryDTO { Question = question }).Result;
             if (voiceOutput)
             {
@@ -182,8 +183,14 @@ namespace Speech2TextPrototype.Controllers
         [Route("text2speech/{text}")]
         public async Task TextToSpeechAsync(string text)
         {
-            using var synthesizer = new SpeechSynthesizer(speechConfig);
-            await synthesizer.SpeakTextAsync(text);
+            string[] keywords = new string[] { "M_SALES_VALUE", "M_SALES_VOLUME", "M_SALES_ITEMS",
+                "PRODUCT_NAME", "CATEGORY_NAME", "BRAND" };
+            if (!keywords.Contains(text)){
+                // Delete # from markdown
+                text = Regex.Replace(text, "#", "");
+                using var synthesizer = new SpeechSynthesizer(speechConfig);
+                await synthesizer.SpeakTextAsync(text);
+            }
         }
 
         /// <summary>
@@ -191,24 +198,25 @@ namespace Speech2TextPrototype.Controllers
         /// </summary>
         /// <param name="pageIndex">The index of the datatable page we are on</param>
         /// <param name="pageSize">The number of rows per page</param>
+        /// <param name="uuid">User ID to enable concurrent usage of the displayTable</param>
         /// <returns>Paged data back to the datatable</returns>
         [HttpGet]
         [Route("table/page")]
-        public List<DisplayTable> getPagedTable(int pageIndex, int pageSize, string uuid)
+        public List<DisplayTable> GetTablePaged(int pageIndex, int pageSize, string uuid)
         {
             return _displayTableService.GetTablePaged(pageIndex, pageSize, uuid);
         }
 
         [HttpGet]
         [Route("table/sort")]
-        public List<DisplayTable> getSortedTable(string column, string sortOrder, int pageIndex, int pageSize, string uuid)
+        public List<DisplayTable> GetTableSorted(string column, string sortOrder, int pageIndex, int pageSize, string uuid)
         {
             return _displayTableService.GetTableSorted(column, sortOrder, pageIndex, pageSize, uuid);
         }
 
         [HttpGet]
         [Route("table/delete")]
-        public void deleteTable(string uuid)
+        public void DeleteTable(string uuid)
         {
             _displayTableService.DeleteData(uuid);
         }

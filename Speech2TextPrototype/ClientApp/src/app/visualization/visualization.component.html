@@ -3,26 +3,26 @@
 
 <div class="card">
   <div class="card-body">
-    <cdk-virtual-scroll-viewport itemSize="50" class="scrollview" #scrollView>
+    <cdk-virtual-scroll-viewport itemSize="4" class="scrollview" #scrollView>
       <div #messages *cdkVirtualFor="let conversation of allConversations;index as i;">
         <div class="row mx-0 px-0">
           <div class="col-6 ml-4 p-0 text-right">
-            <span class="badge badge-primary px-3 py-2 w-100 interactionText">
-              {{ conversation.question }}
+            <span class="badge badge-primary px-3 pt-3 pb-0 w-100 interactionText">
+              <p>{{ conversation.question }}</p>
             </span>
           </div>
         </div>
         <div class="row m-0 p-0 my-2" *ngIf="conversation.answer">
           <div class="col-5 mx-0 px-0"></div>
           <div class="col-6 p-0 text-left">
-            <div class="badge badge-secondary px-3 py-2 w-100 interactionText">
-              <markdown> {{ conversation.answer }}</markdown>
-              <div *ngIf="prompts.length > 0 && i == conversationIndex-1" class="row justify-content-center mt-2">
-                <div class="col" *ngFor="let prompt of prompts">
+            <div class="badge badge-secondary px-3 pt-3 pb-0 w-100 interactionText">
+              <markdown>{{ conversation.answer }}</markdown>
+              <div *ngIf="prompts.length > 0 && i == conversationIndex-1" class="container-fluid justify-content-center mt-2">
+                <div class="mb-2" *ngFor="let prompt of prompts">
                   <button mat-raised-button
                           class="promptButton"
                           (click)="answerPrompt(prompt)">
-                    <span>{{ prompt }}</span>
+                    <span class="interactionText">{{ prompt }}</span>
                   </button>
                 </div>
               </div>

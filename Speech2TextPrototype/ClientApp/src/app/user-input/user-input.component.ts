@@ -12,17 +12,15 @@ import { FormControl } from '@angular/forms';
 })
 export class UserInputComponent implements OnInit, OnDestroy{
     private resultSpeech2Text: string;
-    private thinking: boolean = false;
-    private listening: boolean = false;
+    public thinking: boolean = false;
+    public listening: boolean = false;
     public voiceOutput: boolean = false;
-    private responseAnswer: Answer;
-    private question: string;
-    private submittedQuestion: string;
+    public responseAnswer: Answer;
+    public submittedQuestion: string;
     private sqlQuery = '';
     private subscriptions: Subscription[] = [];
-    private debug: boolean = false;
     questionFC = new FormControl('');
-    private uuid = '';
+    public uuid = '';
 
     constructor(private apiService: ApiService) { }
 

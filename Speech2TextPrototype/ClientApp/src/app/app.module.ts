@@ -7,7 +7,6 @@ import { MarkdownModule } from 'ngx-markdown';
 
 import { AppComponent } from './app.component';
 import { NavMenuComponent } from './nav-menu/nav-menu.component';
-import { HomeComponent } from './home/home.component';
 import { UserInputComponent } from './user-input/user-input.component';
 import { VisualizationComponent } from './visualization/visualization.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -17,7 +16,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSortModule } from '@angular/material/sort';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner'
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCardModule } from '@angular/material/card';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatButtonModule } from '@angular/material/button';
@@ -27,7 +26,6 @@ import { ScrollingModule } from '@angular/cdk/scrolling';
   declarations: [
     AppComponent,
     NavMenuComponent,
-    HomeComponent,
     UserInputComponent,
     VisualizationComponent,
   ],
@@ -36,7 +34,8 @@ import { ScrollingModule } from '@angular/cdk/scrolling';
     HttpClientModule,
     FormsModule,
     RouterModule.forRoot([
-      { path: '', component: HomeComponent, pathMatch: 'full' },
+      { path: '', redirectTo: '/UserInput', pathMatch: 'full' },
+      { path: '**', redirectTo: '/UserInput' },
       { path: 'UserInput', component: UserInputComponent },
     ]),
     BrowserAnimationsModule,

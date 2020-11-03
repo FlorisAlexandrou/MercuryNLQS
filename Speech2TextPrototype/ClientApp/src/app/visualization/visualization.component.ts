@@ -1,7 +1,9 @@
-import { Component, OnInit, ViewChild, NgZone, Input, OnChanges, SimpleChanges, OnDestroy, Output, EventEmitter, ChangeDetectionStrategy, ElementRef, ViewChildren, QueryList, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ViewChild, NgZone, Input, OnChanges,
+        SimpleChanges, OnDestroy, Output, EventEmitter, ChangeDetectionStrategy,
+        ViewChildren, QueryList, AfterViewInit } from '@angular/core';
 import { DisplayTable } from '../models/displayTable.model';
-import * as am4core from "@amcharts/amcharts4/core";
-import * as am4charts from "@amcharts/amcharts4/charts";
+import * as am4core from '@amcharts/amcharts4/core';
+import * as am4charts from '@amcharts/amcharts4/charts';
 import { ChartData } from '../models/chartData.model';
 import { Answer } from '../models/Answer.model';
 import { Conversation } from '../models/conversation.model';
@@ -12,6 +14,7 @@ import { tap } from 'rxjs/operators';
 import { ApiService } from '../api.service';
 import { Subscription } from 'rxjs';
 import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
+import { ScrollingModule } from '@angular/cdk/scrolling';
 
 @Component({
   selector: 'app-visualization',
@@ -42,12 +45,12 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
     conversationIndex = 0;
     private chartData: ChartData[] = [];
     private tableData: DisplayTable[] = [];
-    private measurable = '';
+    public measurable = '';
     private prompts: string[] = [];
-    private showTable = false;
-    private showChart = false;
+    public showTable = false;
+    public showChart = false;
     private subscriptions: Subscription[] = [];
-
+    private tableSubscriptions: Subscription[] = [];
     constructor(private zone: NgZone, private api: ApiService) { }
 
     ngOnInit() {
@@ -56,25 +59,26 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
     }
 
     ngAfterViewInit() {
-        this.messages.changes.subscribe(this.scrollToBottom);
+        this.subscriptions.push(this.messages.changes.subscribe(this.scrollToBottom));
     }
 
     ngOnChanges(changes: SimpleChanges) {
         if (changes.question) {
-            if (changes.question.currentValue != undefined) {
+            if (changes.question.currentValue !== undefined) {
                 this.handleQuestion();
             }
         }
         if (changes.answer) {
-            if (changes.answer.currentValue != undefined) {
+            if (changes.answer.currentValue !== undefined) {
                 this.handleAnswer();
             }
         }
     }
 
-    handleQuestion() {
-        const _conversation: Conversation = { question: this.question, answer: '' };
-        this.allConversations = [...this.allConversations, _conversation];
+  handleQuestion() {
+      const _conversation: Conversation = { question: this.question, answer: '' };
+      this.allConversations = [...this.allConversations, _conversation];
+
          // Reset UI when question is asked
          this.prompts = [];
          if (this.showChart) {
@@ -83,16 +87,17 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
              //});
              this.chartData = [];
              this.showChart = false;
-             this.generatedQueryText = '';
+           this.generatedQueryText = '';
+
          }
          else if (this.showTable) {
              this.showTable = false;
              this.dataSource.disconnect();
-             this.subscriptions.forEach(sub => sub.unsubscribe());
+             this.tableSubscriptions.forEach(sub => sub.unsubscribe());
              this.tableData = [];
              this.generatedQueryText = '';
-             this.dataSource = new VisualizationDataSource(this.api, this.uuid);
-        }
+            this.dataSource = new VisualizationDataSource(this.api, this.uuid);
+    }
     }
 
     handleAnswer() {
@@ -123,7 +128,7 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
                 console.log(res.listMeasures);
                 console.log(res.queryResult);
                 this.tableData = res.queryResult;
-                this.allConversations[this.conversationIndex].answer = "A query with more than 3000 rows is suitable only for a table!"
+                this.allConversations[this.conversationIndex].answer = "A query with more than 3000 rows is suitable only for a table!";
                 this.conversationIndex++;
                 this.tableVisualize();
                 return;
@@ -178,9 +183,9 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
         this.dataSource.paginator = this.paginator;
         this.dataSource.sort = this.sort;
 
-        this.subscriptions.push(this.paginator.page.pipe(tap(() => this.loadTDataPage())).subscribe());
-        this.subscriptions.push(this.sort.sortChange.subscribe(() => this.paginator.pageIndex = 0));
-        this.subscriptions.push(this.sort.sortChange.pipe(tap(() => this.dataSource.getSortedData(this.dataSource.data))).subscribe());
+        this.tableSubscriptions.push(this.paginator.page.pipe(tap(() => this.loadTDataPage())).subscribe());
+        this.tableSubscriptions.push(this.sort.sortChange.subscribe(() => this.paginator.pageIndex = 0));
+        this.tableSubscriptions.push(this.sort.sortChange.pipe(tap(() => this.dataSource.getSortedData(this.dataSource.data))).subscribe());
         console.log(this.tableData);
         this.dataSource.loadData(this.tableData, this.measurable);
         this.showTable = true;
@@ -272,7 +277,7 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
 
             let pieSeries = chart.series.push(new am4charts.PieSeries());
             pieSeries.dataFields.value = "m_SALES_VALUE";
-            pieSeries.dataFields.category = "timestamp"; 
+            pieSeries.dataFields.category = "timestamp";
 
             this.amPieChart = chart;
             this.showChart = true;
@@ -347,12 +352,12 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
     }
 
     public answerPrompt(prompt: string) {
-        this.promptAnswered.emit(prompt);
+      this.promptAnswered.emit(prompt);
     }
 
     scrollToBottom = () => {
-        try {
-            this.scrollView.scrollToIndex(this.allConversations.length, "smooth");
+      try {
+        this.scrollView.scrollToOffset(999999, "smooth");
         } catch (err) { }
     }
 
@@ -361,6 +366,7 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
         // Clear table on user exit/page refresh
         this.api.deleteTable(this.uuid).subscribe();
         this.subscriptions.forEach(sub => sub.unsubscribe());
+        this.tableSubscriptions.forEach(sub => sub.unsubscribe());
         this.zone.runOutsideAngular(() => {
             if (this.XYChart) {
                 this.XYChart.dispose();

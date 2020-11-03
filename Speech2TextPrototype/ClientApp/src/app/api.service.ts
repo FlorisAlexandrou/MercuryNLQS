@@ -8,8 +8,9 @@ import { DisplayTable } from './models/displayTable.model';
   providedIn: 'root'
 })
 export class ApiService {
-    webUrl: string = 'https://localhost:44382'
-    apiUrl: string = '/api/UserInput'
+    // webUrl = 'https://localhost:5001';
+    webUrl = 'https://localhost:44382';
+    apiUrl = '/api/UserInput';
 
     constructor(private httpClient: HttpClient) { }
 
@@ -32,7 +33,7 @@ export class ApiService {
     }
 
     public textToSpeech(text: string) {
-        return this.httpClient.get(this.webUrl + this.apiUrl + "/text2speech/" + text);
+        return this.httpClient.get(this.webUrl + this.apiUrl + '/text2speech/' + text);
     }
 
     public deleteTable(uuid: string) {

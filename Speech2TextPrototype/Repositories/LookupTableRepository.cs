@@ -47,6 +47,12 @@ namespace Speech2TextPrototype.Repositories
         /// <summary>String which is used for Past X {Year, Month, Day}</summary>
         private string timeType = "";
 
+        /// <summary>Indicates wheter there is a "top" keyword in the query</summary>
+        private bool isTop = false;
+
+        /// <summary>Indicates the value of top (e.g. top 5 sales), 10 by default</summary>
+        private string topNum = "10";
+
         public LookupTableRepository(florisContext context)
         {
             _context = context;
@@ -63,11 +69,11 @@ namespace Speech2TextPrototype.Repositories
             string[] tokens = res.tokens;
             string[] bigrams = res.bigrams;
 
-            bigramLookup(bigrams);
+            BigramLookup(bigrams);
 
             tokens = DeleteKnownTokens(tokens);
 
-            tokenLookup(tokens);
+            TokenLookup(tokens);
 
             string query = ConstructQuery();
 
@@ -109,7 +115,7 @@ namespace Speech2TextPrototype.Repositories
         /// </summary>
         /// <param name="bigrams">Array of 2-word tokens from the python script</param>
         /// <returns>void - passing by erence</returns>
-        private void bigramLookup(string[] bigrams)
+        private void BigramLookup(string[] bigrams)
         {
             foreach (string bigram in bigrams)
             {
@@ -184,7 +190,7 @@ namespace Speech2TextPrototype.Repositories
         /// </summary>
         /// <param name="tokens">Array of single-word tokens from the python script</param>
         /// <returns>void - passing by erence</returns>
-        private void tokenLookup(string[] tokens)
+        private void TokenLookup(string[] tokens)
         {
             int tokenIndex = 0;
 
@@ -200,11 +206,9 @@ namespace Speech2TextPrototype.Repositories
 
                 if (token == "last" || token == "past")
                 {
-                    // Only Accept 2-digit numbers so that it will not produce an error when query does not contain timeNum "Past Month"
-                    // ine so that it accepts any number of digits, mabye check if token[tokenIndex+1] can be converted to INT or if it is    in ['day','month','year']
-                    if (tokens[tokenIndex + 1].Length < 3)
+                    if (int.TryParse(tokens[tokenIndex + 1], out int number))
                     {
-                        timeNum = tokens[tokenIndex + 1];
+                        timeNum = (int.Parse(tokens[tokenIndex + 1]) - 1).ToString();
                         timeType = tokens[tokenIndex + 2];
                     }
                     else
@@ -212,6 +216,15 @@ namespace Speech2TextPrototype.Repositories
                         timeType = tokens[tokenIndex + 1];
                     }
                     continue;
+                }
+
+                if (token == "top")
+                {
+                    isTop = true;
+                    if (int.TryParse(tokens[tokenIndex + 1], out int number))
+                    {
+                        topNum = tokens[tokenIndex + 1];
+                    }
                 }
 
                 // Check for aggregates
@@ -335,7 +348,10 @@ namespace Speech2TextPrototype.Repositories
             }
 
             // Construct Query
-            query = "SELECT * FROM TDATA";
+            if (isTop)
+                query = $"SELECT TOP {topNum} * FROM TDATA";
+            else
+                query = "SELECT * FROM TDATA";
 
             if (!String.IsNullOrEmpty(wheres))
                 query += " WHERE " + wheres;
@@ -345,7 +361,11 @@ namespace Speech2TextPrototype.Repositories
 
         public List<DisplayTable> GroupByFilters (string query, string groupByFilter, string uuid)
         {
-            string selectStatement = "SELECT SUM(M_SALES_VALUE) AS M_SALES_VALUE, " +
+            string topStatement = "";
+            if (query.Contains("TOP"))
+                topStatement = "TOP " + query.Split("TOP")[1].Trim().Split()[0];
+
+            string selectStatement = $"SELECT {topStatement} SUM(M_SALES_VALUE) AS M_SALES_VALUE, " +
                                      "SUM(M_SALES_VOLUME) AS M_SALES_VOLUME, " +
                                      "COUNT(M_SALES_ITEMS) AS M_SALES_ITEMS, " +
                                      "PERIOD_START, " + groupByFilter;
@@ -363,11 +383,15 @@ namespace Speech2TextPrototype.Repositories
                 whereStatement = " WHERE " + query.Split(new[] { "WHERE" }, StringSplitOptions.None)[1];
             string groupByStatement = " GROUP BY PERIOD_START, " + groupByFilter;
 
+            if (topStatement.Length > 0)
+            {
+                groupByStatement += " ORDER BY M_SALES_VALUE DESC, M_SALES_VOLUME DESC, M_SALES_ITEMS DESC";
+            }
+
             // Delete previously generated results of current user
             var toDelete = _context.displayTable.Where(r => r.UUID == uuid).ToList();
             _context.displayTable.RemoveRange(toDelete);
             _context.SaveChanges();
-
 
             var result2 = _context.tdata.FromSqlRaw(selectStatement + fromStatement + whereStatement + groupByStatement);
 

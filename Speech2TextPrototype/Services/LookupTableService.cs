@@ -43,10 +43,6 @@ namespace Speech2TextPrototype.Services
             {
                 return "ERROR:No List Measures";
             }
-            else if (listDatesLen == 0)
-            {
-                return "WARNING:No List Dates";
-            }
             return string.Empty;
         }
     }
