@@ -30,7 +30,7 @@
     "aspnet-prerendering": "^3.0.1",
     "bootstrap": "^4.5.3",
     "core-js": "^3.6.5",
-    "jquery": "3.4.1",
+    "jquery": "3.5.0",
     "ngx-markdown": "^10.1.1",
     "oidc-client": "^1.9.1",
     "popper.js": "^1.16.0",
