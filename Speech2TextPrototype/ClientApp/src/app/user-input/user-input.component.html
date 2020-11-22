@@ -1,26 +1,26 @@
 <h1>Ask anything!</h1>
-<br />
-
-<div class="flexContainer">
-
+<div class="d-flex mt-4">
   <input type="text"
-         class="inputField"
+         class="inputField mr-4"
          placeholder="Say or type 'help' to start!"
          required
          autofocus
          (keydown.enter)="getAnswer()"
-         [formControl]="questionFC">
+         [formControl]="questionFC"
+         [matAutocomplete]="auto">
+  <mat-autocomplete #auto="matAutocomplete">
+    <mat-option *ngFor="let option of filteredQuestions | async" [value]="option">
+      {{option}}
+    </mat-option>
+  </mat-autocomplete>
   <button class="btn btn-primary mr-1" (click)="getAnswer()">Ask!</button>
 
   <span id="speech" class="btn" (click)="Speech2Text()">
-    <i class="fa fa-microphone"></i>
+    <i [ngClass]="listening ? 'fa fa-microphone fa-microphone-active' : 'fa fa-microphone'"></i>
     <div [class.pulse-ring]="listening"></div>
   </span>
+  <mat-slide-toggle class="mt-3 ml-2" color="primary" (change)="toggleVoice($event)">Voice Output</mat-slide-toggle>
 </div>
-
-<br />
-<mat-slide-toggle color="primary" (change)="toggleVoice($event)">Voice Output</mat-slide-toggle>
-<br />
 
 <app-visualization [answer]="responseAnswer"
                    [question]="submittedQuestion"

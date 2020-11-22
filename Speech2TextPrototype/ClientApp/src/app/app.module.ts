@@ -21,6 +21,8 @@ import { MatCardModule } from '@angular/material/card';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatButtonModule } from '@angular/material/button';
 import { ScrollingModule } from '@angular/cdk/scrolling';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 @NgModule({
   declarations: [
@@ -48,6 +50,8 @@ import { ScrollingModule } from '@angular/cdk/scrolling';
     MatButtonModule,
     ScrollingModule,
     ReactiveFormsModule,
+    MatAutocompleteModule,
+    MatSnackBarModule,
     MarkdownModule.forRoot(),
   ],
   providers: [],
