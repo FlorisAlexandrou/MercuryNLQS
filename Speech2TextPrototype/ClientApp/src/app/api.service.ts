@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Answer } from './models/Answer.model';
 import { DisplayTable } from './models/displayTable.model';
+import { PredictionData } from './models/predictionData.model';
 
 @Injectable({
   providedIn: 'root'
@@ -11,6 +12,7 @@ export class ApiService {
     // webUrl = 'https://localhost:5001';
     webUrl = 'https://localhost:44382';
     apiUrl = '/api/UserInput';
+    pythonServiceUrl = 'https://tokens-api.herokuapp.com';
 
     constructor(private httpClient: HttpClient) { }
 
@@ -39,4 +41,12 @@ export class ApiService {
     public deleteTable(uuid: string) {
         return this.httpClient.get(this.webUrl + this.apiUrl + `/table/delete?uuid=${uuid}`);
     }
-}
+
+    public predict(currentData: PredictionData[]): Observable<PredictionData[]> {
+      return this.httpClient.post<PredictionData[]>(this.pythonServiceUrl + '/predict', currentData);
+    }
+
+  public savePredictionData(data: DisplayTable[]) {
+    return this.httpClient.post(this.webUrl + this.apiUrl + '/table/save', data);
+  }
+} 

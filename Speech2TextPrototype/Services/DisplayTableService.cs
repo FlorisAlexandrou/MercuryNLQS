@@ -80,6 +80,11 @@ namespace Speech2TextPrototype.Services
             return data.Skip(pageIndex * pageSize).Take(pageSize).ToList();
         }
 
+        public void SaveData(List<DisplayTable> tableData)
+        {
+            _displayTableRepository.SaveData(tableData);
+        }
+
         public void DeleteData(string uuid)
         {
             _displayTableRepository.DeleteData(uuid);

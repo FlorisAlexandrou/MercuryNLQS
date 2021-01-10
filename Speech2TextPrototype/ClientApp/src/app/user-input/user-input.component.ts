@@ -60,7 +60,11 @@ export class UserInputComponent implements OnInit, OnDestroy{
             this.subscriptions.push(this.apiService.getAnswer(_question, this.sqlQuery, this.uuid, this.voiceOutput).subscribe((res) => {
                 this.responseAnswer = res;
                 this.thinking = false;
-            }));
+            },
+              (error) => {
+                this.thinking = false;
+                this._snackBar.open("Something went wrong! Please try again and check your internet connection.", "okay", {duration: 3000});
+              }));
             if (!this.questions.includes(_question))
                 this.questions.push(_question);
             this.questionFC.reset();
@@ -78,7 +82,19 @@ export class UserInputComponent implements OnInit, OnDestroy{
 
     public saveQuery(query: string) {
         this.sqlQuery = query;
-    }
+  }
+
+  public askPrediction(text: string) {
+    this.thinking = true;
+    this.subscriptions.push(this.apiService.getAnswer(text, this.sqlQuery, this.uuid, this.voiceOutput).subscribe((res) => {
+      this.responseAnswer = res;
+      this.thinking = false;
+    },
+      (error) => {
+        this.thinking = false;
+        this._snackBar.open("Something went wrong! Please try again and check your internet connection.", "okay", { duration: 3000 });
+      }));
+  }
 
     private generate_UUID() {
         var dt = new Date().getTime();

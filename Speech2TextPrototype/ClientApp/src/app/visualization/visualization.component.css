@@ -19,3 +19,17 @@
   word-break: break-word;
   white-space: normal;
 }
+
+.deleteTableButton {
+  position: relative;
+  top: 8vh;
+  left: 31vw;
+  z-index: 2;
+}
+
+.deleteChartButton {
+  position: relative;
+  left: 31vw;
+  z-index: 2;
+}
+

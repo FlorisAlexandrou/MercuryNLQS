@@ -32,7 +32,6 @@ export class VisualizationDataSource extends DataSource<DisplayTable> {
         this.measurable = measurable;
         this.getPagedData(this.data);
         this.loadingSubject.next(false);
-
     }
 
     /**
@@ -79,5 +78,5 @@ export class VisualizationDataSource extends DataSource<DisplayTable> {
                 this.tdataSubject.next(res)
                 this.loadingSubject.next(false);
             });
-    }
+  }
 }

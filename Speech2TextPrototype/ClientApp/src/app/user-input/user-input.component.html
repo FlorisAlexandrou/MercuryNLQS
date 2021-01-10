@@ -13,9 +13,9 @@
       {{option}}
     </mat-option>
   </mat-autocomplete>
-  <button class="btn btn-primary mr-1" (click)="getAnswer()">Ask!</button>
+  <button class="btn btn-primary mr-1" (click)="getAnswer()" matTooltip="Ask a question">Ask!</button>
 
-  <span id="speech" class="btn" (click)="Speech2Text()">
+  <span id="speech" class="btn" (click)="Speech2Text()" matTooltip="Click and speak">
     <i [ngClass]="listening ? 'fa fa-microphone fa-microphone-active' : 'fa fa-microphone'"></i>
     <div [class.pulse-ring]="listening"></div>
   </span>
@@ -26,7 +26,8 @@
                    [question]="submittedQuestion"
                    [uuid]="uuid"
                    (promptAnswered)="answerPrompt($event)"
-                   (sqlQueryComposed)="saveQuery($event)">
+                   (sqlQueryComposed)="saveQuery($event)"
+                   (askPrediction)="askPrediction($event)">
   <div *ngIf="thinking" class="lds-facebook"><div></div><div></div><div></div></div>
 </app-visualization>
 

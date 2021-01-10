@@ -14,7 +14,8 @@ import { tap } from 'rxjs/operators';
 import { ApiService } from '../api.service';
 import { Subscription } from 'rxjs';
 import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
-import { ScrollingModule } from '@angular/cdk/scrolling';
+import { PredictionData } from '../models/predictionData.model';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-visualization',
@@ -37,6 +38,8 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
     @Input('uuid') uuid: string;
     @Output('promptAnswered') promptAnswered = new EventEmitter<string>();
     @Output('sqlQueryComposed') sqlQueryComposed = new EventEmitter<string>();
+    /**Used to prompt the qnamaker to ask for a prediction (after table or chart output)*/
+    @Output('askPrediction') askPrediction = new EventEmitter<string>();
     @ViewChild('scrollView') scrollView: CdkVirtualScrollViewport;
     @ViewChildren('messages') messages: QueryList<any>;
 
@@ -49,9 +52,10 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
     private prompts: string[] = [];
     public showTable = false;
     public showChart = false;
+    public loadingPrediction = false;
     private subscriptions: Subscription[] = [];
     private tableSubscriptions: Subscription[] = [];
-    constructor(private zone: NgZone, private api: ApiService) { }
+    constructor(private zone: NgZone, private api: ApiService, private _snackBar: MatSnackBar) { }
 
     ngOnInit() {
         this.dataSource = new VisualizationDataSource(this.api, this.uuid);
@@ -79,25 +83,8 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
       const _conversation: Conversation = { question: this.question, answer: '' };
       this.allConversations = [...this.allConversations, _conversation];
 
-         // Reset UI when question is asked
+         // Reset prompts when question is asked
          this.prompts = [];
-         if (this.showChart) {
-             //    this.zone.runOutsideAngular(() => {
-             //        am4core.disposeAllCharts();
-             //});
-             this.chartData = [];
-             this.showChart = false;
-           this.generatedQueryText = '';
-
-         }
-         else if (this.showTable) {
-             this.showTable = false;
-             this.dataSource.disconnect();
-             this.tableSubscriptions.forEach(sub => sub.unsubscribe());
-             this.tableData = [];
-             this.generatedQueryText = '';
-            this.dataSource = new VisualizationDataSource(this.api, this.uuid);
-    }
     }
 
     handleAnswer() {
@@ -167,6 +154,9 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
                 this.onShowChart(botAnswer);
                 this.lineChart();
                 return;
+          case "Prediction":
+            this.getPrediction();
+            return;
         }
 
         // Normal qna response without data
@@ -179,18 +169,23 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
         }
     }
 
-    private tableVisualize() {
+  private tableVisualize() {
+        this.tableData.sort((a, b) => (a.perioD_START > b.perioD_START) ? 1 : -1);
         this.dataSource.paginator = this.paginator;
         this.dataSource.sort = this.sort;
 
         this.tableSubscriptions.push(this.paginator.page.pipe(tap(() => this.loadTDataPage())).subscribe());
         this.tableSubscriptions.push(this.sort.sortChange.subscribe(() => this.paginator.pageIndex = 0));
         this.tableSubscriptions.push(this.sort.sortChange.pipe(tap(() => this.dataSource.getSortedData(this.dataSource.data))).subscribe());
-        console.log(this.tableData);
         this.dataSource.loadData(this.tableData, this.measurable);
         this.showTable = true;
         this.allConversations[this.conversationIndex].answer = 'Please find the table below!'
         this.conversationIndex++;
+      if (this.tableData.length > 2) {
+        this.askPrediction.emit('Ask Prediction')
+        const _conversation: Conversation = { question: '', answer: '' };
+        this.allConversations = [...this.allConversations, _conversation];
+      }
     }
 
     loadTDataPage() {
@@ -349,7 +344,13 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
     private onShowChart(chartName: string) {
         this.allConversations[this.conversationIndex].answer = `Your ${chartName} is on the way!`
         this.conversationIndex++;
+      if (this.chartData.length > 2) {
+        this.askPrediction.emit('Ask Prediction')
+        const _conversation: Conversation = { question: '', answer: '' };
+        this.allConversations = [...this.allConversations, _conversation];
+      }
     }
+
 
     public answerPrompt(prompt: string) {
       this.promptAnswered.emit(prompt);
@@ -361,6 +362,101 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
         } catch (err) { }
     }
 
+
+  private getPrediction() {
+    this.loadingPrediction = true;
+    let predictionData: PredictionData[] = [];
+    // Fix measurable to match json key
+    const measurable = 'm' + this.measurable.slice(1);
+    // Get prediction based on chart data
+    if (this.chartData.length > 0) {
+      // Populate chart data for model (Sarima) fitting
+      this.chartData.forEach(r => {
+        let row: PredictionData = <PredictionData>{};
+        row.sales = r[measurable];
+        row.date = r.perioD_START;
+        predictionData.push(row);
+      });
+      // Append response prediction to current data
+      this.subscriptions.push(
+        this.api.predict(predictionData).subscribe((res: PredictionData[]) => {
+        res.forEach(pd => {
+          let row: ChartData = <ChartData>{};
+          row[measurable] = pd.sales;
+          row.perioD_START = pd.date;
+          this.chartData.push(row);
+        });
+        this.prepareChartData();
+        // Append data to the active chart type
+        if (this.XYChart.data.length > 0) this.XYChart.data = this.chartData;
+        else if (this.amPieChart.data.length > 0) this.amPieChart.data = this.chartData;
+        else if (this.amRadarChart.data.length > 0) this.amRadarChart.data = this.chartData;
+        this.askPrediction.emit("Prediction Success");
+        this.loadingPrediction = false;
+      },
+        (error) => {
+          this.loadingPrediction = false;
+          this._snackBar.open("Something went wrong with the prediction", "okay", {duration: 3000});
+        }));
+    }
+    // Get prediction based on table data
+    else if (this.tableData.length > 0) {
+      // Populate table data for model (Sarima) fitting
+      this.tableData.forEach(r => {
+        let row: PredictionData = <PredictionData>{};
+        row.sales = r[measurable];
+        row.date = r.perioD_START;
+        predictionData.push(row);
+      });
+      // Prediction response to be saved on to DB displayTable for serverside pagination and sorting
+      let newTableData: DisplayTable[] = [];
+      this.subscriptions.push(
+        this.api.predict(predictionData).subscribe((res: PredictionData[]) => {
+        res.forEach(pd => {
+          let row: DisplayTable = <DisplayTable>{};
+          row.uuid = this.tableData[0].uuid;
+          row[measurable] = pd.sales;
+          row.perioD_START = pd.date;
+          row.brand = "N/A";
+          row.producT_NAME = "N/A";
+          row.categorY_NAME = "N/A";
+          newTableData.push(row);
+        });
+          this.tableData.push(...newTableData);
+          // Save prediction response to DB displayTable
+        this.subscriptions.push(
+          this.api.savePredictionData(newTableData).subscribe((res) => {
+          // Then reload table
+          this.dataSource.loadData(this.tableData, this.measurable);
+          this.askPrediction.emit("Prediction Success");
+          this.loadingPrediction = false;
+        },
+          (error) => {
+            this.loadingPrediction = false;
+            this._snackBar.open("Something went wrong with the backend! Please refresh and try again.", "okay", {duration: 3000});
+          }));
+
+      }, (error) => {
+          this.loadingPrediction = false;
+          this._snackBar.open("Something went wrong with the prediction", "okay", {duration: 3000});
+      }));
+    }
+  }
+
+  public deleteTable() {
+    this.showTable = false;
+    this.dataSource.disconnect();
+    this.tableSubscriptions.forEach(sub => sub.unsubscribe());
+    this.tableData = [];
+    this.generatedQueryText = ''; 
+    this.dataSource = new VisualizationDataSource(this.api, this.uuid);
+  }
+
+  public deleteChart() {
+    this.chartData = [];
+    this.showChart = false;
+    this.generatedQueryText = '';
+  }
 
     ngOnDestroy() {
         // Clear table on user exit/page refresh

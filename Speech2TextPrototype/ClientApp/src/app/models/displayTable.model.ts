@@ -1,5 +1,7 @@
 export interface DisplayTable {
-    row: number;
+    uuid: string;
+    rownumber: number;
+    producT_NAME: string;
     brand: string;
     categorY_NAME: string;
     perioD_START: Date;

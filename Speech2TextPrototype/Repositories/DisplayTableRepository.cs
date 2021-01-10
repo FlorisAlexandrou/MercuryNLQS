@@ -33,6 +33,12 @@ namespace Speech2TextPrototype.Repositories
             return chartData;
         }
 
+        public void SaveData(List<DisplayTable> tableData)
+        {
+            _context.displayTable.AddRange(tableData);
+            _context.SaveChanges();
+        }
+
         public void DeleteData(string uuid)
         {
             _context.displayTable.RemoveRange(GetTableData(uuid));

@@ -3,12 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Net.Http;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Azure;
-using System.Globalization;
 using Microsoft.CognitiveServices.Speech;
-using Azure.AI.TextAnalytics;
 using Speech2TextPrototype.Models;
 using Microsoft.Azure.CognitiveServices.Knowledge.QnAMaker;
 using Microsoft.Azure.CognitiveServices.Knowledge.QnAMaker.Models;
@@ -185,12 +181,20 @@ namespace Speech2TextPrototype.Controllers
         {
             string[] keywords = new string[] { "M_SALES_VALUE", "M_SALES_VOLUME", "M_SALES_ITEMS",
                 "PRODUCT_NAME", "CATEGORY_NAME", "BRAND" };
-            if (!keywords.Contains(text)){
-                // Delete # from markdown
-                text = Regex.Replace(text, "#", "");
-                using var synthesizer = new SpeechSynthesizer(speechConfig);
-                await synthesizer.SpeakTextAsync(text);
-            }
+
+            // Do not speak keyword text
+            if (keywords.Contains(text)) return;
+
+            // Speak specific text according to the frontend
+            if (text == "Table")
+                text = "Please find the table below";
+            else if (text.Contains("Chart"))
+                text = $"Your {text} is on the way";
+
+            // Delete # from markdown
+            text = Regex.Replace(text, "#", "");
+            using var synthesizer = new SpeechSynthesizer(speechConfig);
+            await synthesizer.SpeakTextAsync(text);
         }
 
         /// <summary>
@@ -212,6 +216,13 @@ namespace Speech2TextPrototype.Controllers
         public List<DisplayTable> GetTableSorted(string column, string sortOrder, int pageIndex, int pageSize, string uuid)
         {
             return _displayTableService.GetTableSorted(column, sortOrder, pageIndex, pageSize, uuid);
+        }
+
+        [HttpPost]
+        [Route("table/save")]
+        public void SaveTableData([FromBody] List<DisplayTable> tableData)
+        {
+            _displayTableService.SaveData(tableData);
         }
 
         [HttpGet]

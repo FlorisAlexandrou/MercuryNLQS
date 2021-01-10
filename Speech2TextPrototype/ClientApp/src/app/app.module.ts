@@ -23,6 +23,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 @NgModule({
   declarations: [
@@ -52,6 +55,9 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
     ReactiveFormsModule,
     MatAutocompleteModule,
     MatSnackBarModule,
+    MatIconModule,
+    MatTooltipModule,
+    MatProgressBarModule,
     MarkdownModule.forRoot(),
   ],
   providers: [],

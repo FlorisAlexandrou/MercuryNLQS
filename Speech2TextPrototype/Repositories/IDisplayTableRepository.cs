@@ -10,6 +10,7 @@ namespace Speech2TextPrototype.Repositories
     {
         public List<DisplayTable> GetTableData(string uuid);
         public List<DisplayTable> GetChartData(string uuid);
+        public void SaveData(List<DisplayTable> tableData);
         public void DeleteData(string uuid);
     }
 }
