@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Speech2TextPrototype.Data;
 using Speech2TextPrototype.Repositories;
 

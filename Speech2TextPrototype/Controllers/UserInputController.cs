@@ -115,6 +115,7 @@ namespace Speech2TextPrototype.Controllers
             else
                 qna = GetQnA(sentence, voiceOutput);
 
+            // Handle qna answers that are part of the "business" logic
             if (qna.Answers != null)
             {
                 string botAnswer = qna.Answers[0].Answer;
@@ -211,6 +212,15 @@ namespace Speech2TextPrototype.Controllers
             return _displayTableService.GetTablePaged(pageIndex, pageSize, uuid);
         }
 
+        /// <summary>
+        /// Server-side Sorting
+        /// </summary>
+        /// <param name="column">The column to be sorted</param>
+        /// <param name="sortOrder">Ascending or Descending sorting order</param>
+        /// <param name="pageIndex">The index of the datatable page we are on</param>
+        /// <param name="pageSize">The number of rows per page</param>
+        /// <param name="uuid">User ID to enable concurrent usage of the displayTable</param>
+        /// <returns>Sorted data back to the datatable</returns>
         [HttpGet]
         [Route("table/sort")]
         public List<DisplayTable> GetTableSorted(string column, string sortOrder, int pageIndex, int pageSize, string uuid)

@@ -4,8 +4,6 @@ using Speech2TextPrototype.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Speech2TextPrototype.Repositories
 {
@@ -128,11 +126,17 @@ namespace Speech2TextPrototype.Repositories
                         listMeasures.Add(bigramLookupValues.WhereStmt);
                         listMeasureValues.Add(bigramLookupValues.Value);
                     }
-                    // Find WhereStmts
+                    // Find Dates
                     else if (bigramLookupValues.Type == "Date")
                     {
                         listDates.Add(bigramLookupValues.WhereStmt);
                         listDateValues.Add(bigramLookupValues.Value);
+                    }
+                    // Find other "where" statements
+                    else 
+                    {
+                        string statement = bigramLookupValues.WhereStmt + " = " + "'" + bigramLookupValues.Value + "'";
+                        listWhereStatements.Add(statement);
                     }
                 }
             }
@@ -245,11 +249,12 @@ namespace Speech2TextPrototype.Repositories
                     {
                         listMeasures.Add(lookupValues.WhereStmt);
                     }
-                    // Find WhereStmts
+                    // Find Dates
                     else if (lookupValues.Type == "Date")
                     {
                         listDates.Add(lookupValues.WhereStmt);
                     }
+                    // Find other "where" statements
                     else
                     {
                         string statement = lookupValues.WhereStmt + " = " + "'" + lookupValues.Value + "'";
@@ -361,6 +366,7 @@ namespace Speech2TextPrototype.Repositories
 
         public List<DisplayTable> GroupByFilters (string query, string groupByFilter, string uuid)
         {
+            // Add TOP statement
             string topStatement = "";
             if (query.Contains("TOP"))
                 topStatement = "TOP " + query.Split("TOP")[1].Trim().Split()[0];
@@ -370,6 +376,7 @@ namespace Speech2TextPrototype.Repositories
                                      "COUNT(M_SALES_ITEMS) AS M_SALES_ITEMS, " +
                                      "PERIOD_START, " + groupByFilter;
 
+            // Group by the selected granularity
             if (groupByFilter == "PRODUCT_NAME")
                 selectStatement += ", MAX(CATEGORY_NAME) AS CATEGORY_NAME, MAX(BRAND) AS BRAND";
             else if (groupByFilter == "CATEGORY_NAME")
@@ -383,6 +390,7 @@ namespace Speech2TextPrototype.Repositories
                 whereStatement = " WHERE " + query.Split(new[] { "WHERE" }, StringSplitOptions.None)[1];
             string groupByStatement = " GROUP BY PERIOD_START, " + groupByFilter;
 
+            // Sort to show top/best sales
             if (topStatement.Length > 0)
             {
                 groupByStatement += " ORDER BY M_SALES_VALUE DESC, M_SALES_VOLUME DESC, M_SALES_ITEMS DESC";
@@ -393,9 +401,9 @@ namespace Speech2TextPrototype.Repositories
             _context.displayTable.RemoveRange(toDelete);
             _context.SaveChanges();
 
-            var result2 = _context.tdata.FromSqlRaw(selectStatement + fromStatement + whereStatement + groupByStatement);
+            var result = _context.tdata.FromSqlRaw(selectStatement + fromStatement + whereStatement + groupByStatement);
 
-            var dt = result2.Select(r => new DisplayTable()
+            var dt = result.Select(r => new DisplayTable()
             {
                 UUID = uuid,
                 BRAND = r.BRAND,
@@ -406,7 +414,7 @@ namespace Speech2TextPrototype.Repositories
                 M_SALES_VOLUME = r.M_SALES_VOLUME,
                 M_SALES_ITEMS = r.M_SALES_ITEMS
             }).ToList();
-
+            // Save new results to display table
             _context.displayTable.AddRange(dt);
             _context.SaveChanges();
             return dt;
