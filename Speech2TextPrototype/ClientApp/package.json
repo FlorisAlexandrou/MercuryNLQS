@@ -1,6 +1,6 @@
 {
-  "name": "speech2textprototype",
-  "version": "0.0.0",
+  "name": "mercury_nlqs",
+  "version": "1.0.0",
   "scripts": {
     "ng": "ng",
     "start": "echo Starting... && ng serve",
@@ -31,6 +31,7 @@
     "bootstrap": "^4.5.3",
     "core-js": "^3.6.5",
     "jquery": "3.5.0",
+    "microsoft-cognitiveservices-speech-sdk": "^1.15.1",
     "ngx-markdown": "^10.1.1",
     "oidc-client": "^1.9.1",
     "popper.js": "^1.16.0",

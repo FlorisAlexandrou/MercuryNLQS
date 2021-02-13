@@ -443,7 +443,7 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
           this.tableData.push(...newTableData);
           // Save prediction response to DB displayTable
           this.subscriptions.push(
-            this.api.savePredictionData(newTableData).subscribe((res) => {
+            this.api.saveDisplayTableData(newTableData).subscribe((res) => {
               // Then reload table
               this.dataSource.loadData(this.tableData, this.measurable);
               this.askPrediction.emit("Prediction Success");

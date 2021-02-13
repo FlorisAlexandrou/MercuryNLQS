@@ -6,6 +6,7 @@ import { Subscription, Observable } from 'rxjs';
 import { FormControl } from '@angular/forms';
 import { startWith, map } from 'rxjs/operators';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { CognitiveService } from '../cognitive.service';
 
 @Component({
   selector: 'app-UserInput-component',
@@ -25,7 +26,7 @@ export class UserInputComponent implements OnInit, OnDestroy {
   public uuid = '';
   autoCompleteQuestions: Observable<string[]>;
 
-  constructor(private apiService: ApiService, private _snackBar: MatSnackBar) { }
+  constructor(private apiService: ApiService, private _snackBar: MatSnackBar, private cognitiveService: CognitiveService) { }
 
   ngOnInit() {
     this.generate_UUID();
@@ -34,24 +35,24 @@ export class UserInputComponent implements OnInit, OnDestroy {
       startWith(''),
       map(value => this._filter(value))
     );
+
+    this.cognitiveService.getAnswer('sdf');
   }
 
   /** Turn speech to text and submit the question */
-  public Speech2Text() {
+  public async Speech2Text() {
     if (this.listening)
       return;
-    this.subscriptions.push(this.apiService.getText().subscribe((res) => {
-      this.listening = false;
-      if (res && res == "Speech could not be recognized.") {
-        this._snackBar.open(res, "okay", {
-          duration: 3000,
-        });
-        return;
-      }
+    this.listening = true;
+
+    await this.cognitiveService.speechToText().then((res: string) => {
       this.questionFC.setValue(res);
       this.getAnswer();
-    }));
-    this.listening = true;
+    })
+      .catch((res: string) => {
+        this._snackBar.open(res, "okay", { duration: 3000 });
+      })
+      .finally(() => this.listening = false);
   }
 
   /** Submit user query and get answer which is detected by the visualization component */

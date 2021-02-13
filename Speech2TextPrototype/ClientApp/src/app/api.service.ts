@@ -46,7 +46,7 @@ export class ApiService {
       return this.httpClient.post<PredictionData[]>(this.pythonServiceUrl + '/predict', currentData);
     }
 
-  public savePredictionData(data: DisplayTable[]) {
+  public saveDisplayTableData(data: DisplayTable[]) {
     return this.httpClient.post(this.webUrl + this.apiUrl + '/table/save', data);
   }
 } 
