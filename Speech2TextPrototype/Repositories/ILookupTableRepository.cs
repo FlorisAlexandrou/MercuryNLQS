@@ -8,7 +8,9 @@ namespace Speech2TextPrototype.Repositories
     {
         public LookupOutputModel token2Sql(PyRes res);
 
-        public List<DisplayTable> GroupByFilters(string query, string groupByFilter, string uuid);
+        public string GroupByFilters(string query, string groupByFilter, string uuid);
+
+        public List<string> GetSpeechRecognitionCustomWords();
 
     }
 }

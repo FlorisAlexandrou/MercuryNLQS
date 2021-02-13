@@ -22,12 +22,14 @@
   <mat-slide-toggle class="mt-3 ml-2" color="primary" (change)="toggleVoice($event)">Voice Output</mat-slide-toggle>
 </div>
 
-<app-visualization [answer]="responseAnswer"
+<app-visualization [chatbotAnswer]="chatbotAnswer"
+                   [sqlAnswer]="sqlAnswer"
                    [question]="submittedQuestion"
                    [uuid]="uuid"
                    (promptAnswered)="answerPrompt($event)"
                    (sqlQueryComposed)="saveQuery($event)"
-                   (askPrediction)="askPrediction($event)">
+                   (askChatbot)="getChatbotAnswer($event)"
+                   (groupBy)="groupBy($event)">
   <div *ngIf="thinking" class="lds-facebook"><div></div><div></div><div></div></div>
 </app-visualization>
 

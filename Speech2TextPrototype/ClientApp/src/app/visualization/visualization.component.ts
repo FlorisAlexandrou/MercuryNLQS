@@ -1,13 +1,12 @@
 import {
-  Component, OnInit, ViewChild, NgZone, Input, OnChanges,
-  SimpleChanges, OnDestroy, Output, EventEmitter, ChangeDetectionStrategy,
+  Component, OnInit, ViewChild, NgZone, Input,
+  OnDestroy, Output, EventEmitter, ChangeDetectionStrategy,
   ElementRef, AfterViewChecked
 } from '@angular/core';
 import { DisplayTable } from '../models/displayTable.model';
 import * as am4core from '@amcharts/amcharts4/core';
 import * as am4charts from '@amcharts/amcharts4/charts';
 import { ChartData } from '../models/chartData.model';
-import { Answer } from '../models/Answer.model';
 import { Conversation } from '../models/conversation.model';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
@@ -15,9 +14,10 @@ import { VisualizationDataSource } from './visualization-datasource';
 import { tap } from 'rxjs/operators';
 import { ApiService } from '../api.service';
 import { Subscription } from 'rxjs';
-import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 import { PredictionData } from '../models/predictionData.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { qna } from '../models/qna.model';
+import { SqlAnswer } from '../models/sqlAnswer.model';
 
 @Component({
   selector: 'app-visualization',
@@ -25,26 +25,39 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   styleUrls: ['./visualization.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, AfterViewChecked {
+export class VisualizationComponent implements OnInit, OnDestroy, AfterViewChecked {
+  dataSource: VisualizationDataSource;
+  displayedColumns = ['brand', 'categoryName', 'productName', 'periodStart', 'sales'];
+
   private XYChart: am4charts.XYChart;
   private amPieChart: am4charts.PieChart;
   private amRadarChart: am4charts.RadarChart;
 
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild('sortData') sort: MatSort;
-  dataSource: VisualizationDataSource;
-  displayedColumns = ['brand', 'categoryName', 'productName', 'periodStart', 'sales'];
-
-  @Input('answer') answer: Answer;
-  @Input('question') question: string;
-  @Input('uuid') uuid: string;
-  @Output('promptAnswered') promptAnswered = new EventEmitter<string>();
-  @Output('sqlQueryComposed') sqlQueryComposed = new EventEmitter<string>();
-  /**Used to prompt the qnamaker to ask for a prediction (after table or chart output)*/
-  @Output('askPrediction') askPrediction = new EventEmitter<string>();
   @ViewChild('scrollContainer') scrollContainer: ElementRef;
 
-  
+
+  @Input() uuid: string;
+  @Input() set question(question: string) {
+    if (question)
+      this.handleQuestion(question);
+  }
+  @Input() set chatbotAnswer(chatbotAnswer: qna) {
+    if (chatbotAnswer)
+      this.handleChatbotAnswer(chatbotAnswer);
+  }
+  @Input() set sqlAnswer(sqlAnswer: SqlAnswer) {
+    if (sqlAnswer)
+      this.handleSqlAnswer(sqlAnswer);
+  }
+
+  @Output('promptAnswered') promptAnswered = new EventEmitter<string>();
+  @Output('sqlQueryComposed') sqlQueryComposed = new EventEmitter<string>();
+  @Output('groupBy') groupBy = new EventEmitter<string>();
+  @Output('askChatbot') askChatbot = new EventEmitter<string>();
+
+
   private chartData: ChartData[] = [];
   private tableData: DisplayTable[] = [];
   private prompts: string[] = [];
@@ -68,80 +81,67 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
     window.onbeforeunload = () => this.ngOnDestroy();
   }
 
-
   ngAfterViewChecked() {
     this.scrollToBottom();
   }
 
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes.question) {
-      if (changes.question.currentValue !== undefined) {
-        this.handleQuestion();
-      }
-    }
-    if (changes.answer) {
-      if (changes.answer.currentValue !== undefined) {
-        this.handleAnswer();
-      }
-    }
-  }
-
-  handleQuestion() {
-    const _conversation: Conversation = { question: this.question, answer: '' };
+  handleQuestion(question: string) {
+    const _conversation: Conversation = { question: question, answer: '' };
     this.allConversations = [...this.allConversations, _conversation];
-
+    console.log(this.allConversations);
     // Reset prompts when question is asked
     this.prompts = [];
   }
 
-  handleAnswer() {
-    console.log("Response: ", this.answer);
-    const res = this.answer;
+  private handleSqlAnswer(sqlAnswer: SqlAnswer) {
+    // Handle errors
+    if (sqlAnswer.error) {
+      this.askChatbot.emit(sqlAnswer.error);
+      return;
+    }
 
     // Get measurable
-    if (res.listMeasures.length > 0) {
-      this.measurable = res.listMeasures[0];
+    if (sqlAnswer.listMeasures.length > 0) {
+      this.measurable = sqlAnswer.listMeasures[0];
       // Fix measurable to match json key dynamically for prediction and charts
       this.processedMeasurable = 'm' + this.measurable.slice(1);
     }
+
     // Get SQL Query
-    if (res.sqlQuery) {
-      this.generatedQueryText = res.sqlQuery;
+    if (sqlAnswer.sqlQuery) {
+      this.generatedQueryText = sqlAnswer.sqlQuery;
       this.sqlQueryComposed.emit(this.generatedQueryText);
     }
 
     // Get Scalar Value (result of "sum", "avg" etc)
-    if (res.scalar > 0) {
-      this.allConversations[this.conversationIndex].answer = res.scalar.toString();
+    if (sqlAnswer.scalar > 0) {
+      this.allConversations[this.conversationIndex].answer = sqlAnswer.scalar.toString();
       this.conversationIndex++;
       return;
     }
 
-    // Check if there is data in the response
-    if (res.queryResult) {
-      // If query is too large to visualize
-      if (res.queryResult.length > 3000) {
-        console.log(res.listMeasures);
-        console.log(res.queryResult);
-        this.tableData = res.queryResult;
-        this.allConversations[this.conversationIndex].answer = "A query with more than 3000 rows is suitable only for a table!";
-        this.conversationIndex++;
-        this.tableVisualize();
-        return;
-      }
-    }
+    this.askChatbot.emit('Granularity Type');
+  }
 
-    const botAnswer = res.qna.answers[0].answer;
+  private handleChatbotAnswer(chatbotAnswer: qna) {
+    const botAnswer = chatbotAnswer.answers[0].answer;
     // Query can be visualized in both table or chart
     switch (botAnswer) {
       case "What type of chart?":
-        this.chartData = res.queryResult;
-        this.prepareChartData();
+        // Get Chart Data
+        this.subscriptions.push(this.api.getChartData(this.uuid).subscribe((res: ChartData[]) => {
+          this.chartData = res;
+          this.prepareChartData();
+          console.log(res);
+        }));
         break;
       case "Table":
-        this.tableData = res.queryResult;
-        console.log("tableData: ", this.tableData);
-        this.tableVisualize();
+        this.loadingPrediction = true;
+        this.subscriptions.push(this.api.getTableData(this.uuid).subscribe((res: DisplayTable[]) => {
+          this.tableData = res;
+          this.tableVisualize();
+          this.loadingPrediction = false;
+        }));
         return;
       case "Bar Chart":
         this.onShowChart(botAnswer);
@@ -167,15 +167,28 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
         if (this.predictionAsked)
           this.getPrediction();
         else
-          this.askPrediction.emit("okay");
+          this.askChatbot.emit("okay");
         return;
+    }
+
+    if (botAnswer == "M_SALES_VALUE" || botAnswer == "M_SALES_VOLUME" || botAnswer == "M_SALES_ITEMS") {
+      this.measurable = botAnswer;
+      // Fix measurable to match json key dynamically for prediction and charts
+      this.processedMeasurable = 'm' + this.measurable.slice(1);
+      this.askChatbot.emit('Granularity Type');
+      return;
+    }
+
+    if (botAnswer == 'PRODUCT_NAME' || botAnswer == 'CATEGORY_NAME' || botAnswer == 'BRAND') {
+      this.groupBy.emit(botAnswer);
+      return;
     }
 
     // Normal qna response without data
     this.allConversations[this.conversationIndex].answer = botAnswer;
     this.conversationIndex++;
-    if (res.qna.answers[0].context) {
-      for (let prompt of res.qna.answers[0].context.prompts) {
+    if (chatbotAnswer.answers[0].context) {
+      for (let prompt of chatbotAnswer.answers[0].context.prompts) {
         this.prompts.push(prompt.displayText);
       }
     }
@@ -194,7 +207,7 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
     this.allConversations[this.conversationIndex].answer = 'Please find the table below!'
     this.conversationIndex++;
     if (this.tableData.length > 2) {
-      this.askPrediction.emit('Ask Prediction')
+      this.askChatbot.emit('Ask Prediction')
       const _conversation: Conversation = { question: '', answer: '' };
       this.allConversations = [...this.allConversations, _conversation];
       this.predictionAsked = true;
@@ -357,14 +370,13 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
   private onShowChart(chartName: string) {
     this.allConversations[this.conversationIndex].answer = `Your ${chartName} is on the way!`
     this.conversationIndex++;
-    if (this.chartData.length > 2) {
-      this.askPrediction.emit('Ask Prediction')
+    if (this.chartData.length > 2 && this.chartData.length < 500) {
+      this.askChatbot.emit('Ask Prediction')
       const _conversation: Conversation = { question: '', answer: '' };
       this.allConversations = [...this.allConversations, _conversation];
       this.predictionAsked = true;
     }
   }
-
 
   public answerPrompt(prompt: string) {
     this.promptAnswered.emit(prompt);
@@ -378,7 +390,6 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
       });
     } catch (err) { }
   }
-
 
   private getPrediction() {
     this.loadingPrediction = true;
@@ -409,7 +420,7 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
           if (this.XYChart.data.length > 0) this.XYChart.data = this.chartData;
           else if (this.amPieChart.data.length > 0) this.amPieChart.data = this.chartData;
           else if (this.amRadarChart.data.length > 0) this.amRadarChart.data = this.chartData;
-          this.askPrediction.emit("Prediction Success");
+          this.askChatbot.emit("Prediction Success");
           this.loadingPrediction = false;
         },
           (error) => {
@@ -418,7 +429,7 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
           }));
     }
     // Get prediction based on table data
-    else if (this.tableData.length > 0) {
+    else if (this.tableData.length > 2 && this.tableData.length < 600) {
       // Populate table data for model (Sarima) fitting
       this.tableData.forEach(r => {
         let row: PredictionData = <PredictionData>{};
@@ -446,18 +457,15 @@ export class VisualizationComponent implements OnInit, OnChanges, OnDestroy, Aft
             this.api.saveDisplayTableData(newTableData).subscribe((res) => {
               // Then reload table
               this.dataSource.loadData(this.tableData, this.measurable);
-              this.askPrediction.emit("Prediction Success");
-              this.loadingPrediction = false;
+              this.askChatbot.emit("Prediction Success");
             },
               (error) => {
-                this.loadingPrediction = false;
                 this._snackBar.open("Something went wrong with the backend! Please refresh and try again.", "okay", { duration: 3000 });
               }));
 
         }, (error) => {
-          this.loadingPrediction = false;
           this._snackBar.open("Something went wrong with the prediction", "okay", { duration: 3000 });
-        }));
+        }, () => this.loadingPrediction = false));
     }
   }
 

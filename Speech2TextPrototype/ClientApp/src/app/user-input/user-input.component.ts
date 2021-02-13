@@ -4,9 +4,12 @@ import { Answer } from '../models/Answer.model'
 import { MatSlideToggleChange } from '@angular/material/slide-toggle';
 import { Subscription, Observable } from 'rxjs';
 import { FormControl } from '@angular/forms';
-import { startWith, map } from 'rxjs/operators';
+import { startWith, map, finalize } from 'rxjs/operators';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { CognitiveService } from '../cognitive.service';
+import { SqlAnswer } from '../models/sqlAnswer.model';
+import { qna } from '../models/qna.model';
+import { DisplayTable } from '../models/displayTable.model';
 
 @Component({
   selector: 'app-UserInput-component',
@@ -18,6 +21,9 @@ export class UserInputComponent implements OnInit, OnDestroy {
   public listening: boolean = false;
   public voiceOutput: boolean = false;
   public responseAnswer: Answer;
+  public chatbotAnswer: qna;
+  public groupByAnswer: DisplayTable[] = [];
+  public sqlAnswer: SqlAnswer;
   public submittedQuestion: string;
   public questions: string[] = [];
   private sqlQuery = '';
@@ -35,8 +41,6 @@ export class UserInputComponent implements OnInit, OnDestroy {
       startWith(''),
       map(value => this._filter(value))
     );
-
-    this.cognitiveService.getAnswer('sdf');
   }
 
   /** Turn speech to text and submit the question */
@@ -61,18 +65,53 @@ export class UserInputComponent implements OnInit, OnDestroy {
     if (_question && !this.thinking) {
       this.submittedQuestion = _question;
       this.thinking = true;
-      this.subscriptions.push(this.apiService.getAnswer(_question, this.sqlQuery, this.uuid, this.voiceOutput).subscribe((res) => {
-        this.responseAnswer = res;
-        this.thinking = false;
-      },
-        (error) => {
-          this.thinking = false;
-          this._snackBar.open("Something went wrong! Please try again and check your internet connection.", "okay", { duration: 3000 });
+      let isSql = this.cognitiveService.checkIsSql(_question);
+
+      if (isSql) {
+        // Tokenize with python
+        this.subscriptions.push(this.cognitiveService.tokenize(_question).subscribe(pyRes => {
+          // Get query results
+          this.subscriptions.push(this.apiService.getSqlAnswer(pyRes).subscribe((res: SqlAnswer) => {
+            this.sqlAnswer = res;
+            this.thinking = false;
+          }));
         }));
+      }
+      else {
+        this.getChatbotAnswer(_question);
+      }
+
+
       if (!this.questions.includes(_question))
         this.questions.push(_question);
       this.questionFC.reset();
     }
+  }
+
+  public getChatbotAnswer(question: string) {
+    this.thinking = true;
+    this.subscriptions.push(this.cognitiveService.getChatbotAnswer(question).subscribe((res: qna) => {
+      this.chatbotAnswer = res;
+      if (this.voiceOutput)
+        this.cognitiveService.textToSpeech(res.answers[0].answer);
+    },
+      (error) => {
+        this._snackBar.open("Something went wrong! Please try again and check your internet connection.", "okay", { duration: 3000 });
+      },
+      () => this.thinking = false));
+  }
+
+  public groupBy(groupByFilter: string) {
+    this.thinking = true;
+    this.subscriptions.push(this.apiService.getGroupByAnswer(this.sqlQuery, groupByFilter, this.uuid).subscribe((error: string) => {
+      if (error) {
+        this.getChatbotAnswer(error);
+        return;
+      }
+
+      this.getChatbotAnswer("Output Type");
+      this.thinking = false;
+    }));
   }
 
   /** Switch text to speech on and off */
@@ -92,22 +131,6 @@ export class UserInputComponent implements OnInit, OnDestroy {
    */
   public saveQuery(query: string) {
     this.sqlQuery = query;
-  }
-
-  /**
-   * Prompt system to ask user if they want a prediction
-   * @param text
-   */
-  public askPrediction(text: string) {
-    this.thinking = true;
-    this.subscriptions.push(this.apiService.getAnswer(text, this.sqlQuery, this.uuid, this.voiceOutput).subscribe((res) => {
-      this.responseAnswer = res;
-      this.thinking = false;
-    },
-      (error) => {
-        this.thinking = false;
-        this._snackBar.open("Something went wrong! Please try again and check your internet connection.", "okay", { duration: 3000 });
-      }));
   }
 
   /** Generate a unique id for each user to allow concurrent use of the display table */

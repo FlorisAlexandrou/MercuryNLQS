@@ -364,7 +364,7 @@ namespace Speech2TextPrototype.Repositories
             return query;
         }
 
-        public List<DisplayTable> GroupByFilters (string query, string groupByFilter, string uuid)
+        public string GroupByFilters (string query, string groupByFilter, string uuid)
         {
             // Add TOP statement
             string topStatement = "";
@@ -417,7 +417,27 @@ namespace Speech2TextPrototype.Repositories
             // Save new results to display table
             _context.displayTable.AddRange(dt);
             _context.SaveChanges();
-            return dt;
+
+            string error = "";
+
+            if (result.Count() == 0)
+                error = "ERROR:No Query Result";
+
+            return error;
+        }
+
+        // Add all cypriot brands, areas and outlets to the speech recognizer
+        public List<string> GetSpeechRecognitionCustomWords()
+        {
+            var sql = @"SELECT DISTINCT BRAND
+                        FROM TDATA
+                        UNION SELECT DISTINCT AREA_NAME
+                        FROM TDATA
+                        UNION SELECT DISTINCT OUTLET_NAME
+                        FROM TDATA";
+
+            var result = _context.tdata.FromSqlRaw(sql);
+            return result.Select(r => r.BRAND).ToList();
         }
     }
 }

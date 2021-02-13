@@ -13,6 +13,7 @@ namespace Speech2TextPrototype.Services
         {
             _displayTableRepository = displayTableRepository;
         }
+
         public List<DisplayTable> GetTableData(string uuid)
         {
             return _displayTableRepository.GetTableData(uuid);

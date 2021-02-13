@@ -19,7 +19,7 @@ namespace Speech2TextPrototype.Services
             return _lookupTableRepository.token2Sql(res);
         }
 
-        public List<DisplayTable> GroupByFilters(string query, string groupByFilter, string uuid)
+        public string GroupByFilters(string query, string groupByFilter, string uuid)
         {
             return _lookupTableRepository.GroupByFilters(query, groupByFilter, uuid);
         }
@@ -43,5 +43,11 @@ namespace Speech2TextPrototype.Services
             }
             return string.Empty;
         }
+
+        public List<string> GetSpeechRecognitionCustomWords()
+        {
+            return _lookupTableRepository.GetSpeechRecognitionCustomWords();
+        }
+
     }
 }
