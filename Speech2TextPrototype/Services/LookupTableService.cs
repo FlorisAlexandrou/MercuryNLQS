@@ -15,7 +15,6 @@ namespace Speech2TextPrototype.Services
         }
         public LookupOutputModel Token2Sql(PyRes res)
         {
-
             return _lookupTableRepository.token2Sql(res);
         }
 

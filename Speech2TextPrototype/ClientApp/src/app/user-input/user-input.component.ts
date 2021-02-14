@@ -1,6 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ApiService } from '../api.service';
-import { Answer } from '../models/Answer.model'
 import { MatSlideToggleChange } from '@angular/material/slide-toggle';
 import { Subscription, Observable } from 'rxjs';
 import { FormControl } from '@angular/forms';
@@ -20,7 +19,6 @@ export class UserInputComponent implements OnInit, OnDestroy {
   public thinking: boolean = false;
   public listening: boolean = false;
   public voiceOutput: boolean = false;
-  public responseAnswer: Answer;
   public chatbotAnswer: qna;
   public groupByAnswer: DisplayTable[] = [];
   public sqlAnswer: SqlAnswer;

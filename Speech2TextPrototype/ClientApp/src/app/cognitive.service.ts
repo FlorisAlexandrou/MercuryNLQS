@@ -11,6 +11,7 @@ import { PyTokenize } from './models/pyTokenize.model';
 })
 export class CognitiveService {
   private pythonServiceUrl = 'https://tokens-api.herokuapp.com';
+
   private speechConfig = SpeechConfig.fromSubscription('38df3e4febac4df48490c9f3d8eaa23f', 'eastus');
   private speechRecognizer = new SpeechRecognizer(this.speechConfig);
   private speechSynthesizer = new SpeechSynthesizer(this.speechConfig)
@@ -27,10 +28,6 @@ export class CognitiveService {
     this.apiService.getCustomSpeechRecognitionWords().subscribe((words: string[]) => {
       words.forEach(word => this.phraseList.addPhrase(word));
     });
-  }
-
-  public predict(currentData: PredictionData[]): Observable<PredictionData[]> {
-    return this.httpClient.post<PredictionData[]>(this.pythonServiceUrl + '/predict', currentData);
   }
 
   public speechToText() {
@@ -81,6 +78,10 @@ export class CognitiveService {
 
   public tokenize(text: string): Observable<PyTokenize> {
     return this.httpClient.get<PyTokenize>(this.pythonServiceUrl + `/tokenize/${text}`);
+  }
+
+  public predict(currentData: PredictionData[]): Observable<PredictionData[]> {
+    return this.httpClient.post<PredictionData[]>(this.pythonServiceUrl + '/predict', currentData);
   }
 
   public getChatbotAnswer(question: string) {

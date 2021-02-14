@@ -12,7 +12,5 @@ namespace Speech2TextPrototype.Models
         public string[] bigrams { get; set; }
         [JsonProperty(PropertyName = "trigrams")]
         public string[] trigrams { get; set; }
-        [JsonProperty(PropertyName = "isSqlQuery")]
-        public bool isSqlQuery { get; set; }
     }
 }

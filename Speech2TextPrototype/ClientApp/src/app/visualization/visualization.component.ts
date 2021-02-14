@@ -18,6 +18,7 @@ import { PredictionData } from '../models/predictionData.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { qna } from '../models/qna.model';
 import { SqlAnswer } from '../models/sqlAnswer.model';
+import { CognitiveService } from '../cognitive.service';
 
 @Component({
   selector: 'app-visualization',
@@ -65,6 +66,8 @@ export class VisualizationComponent implements OnInit, OnDestroy, AfterViewCheck
   private tableSubscriptions: Subscription[] = [];
   private predictionAsked = false;
   private processedMeasurable = '';
+  // limit to prevent memory overflow on heroku
+  private maxPredictionSize = 20;
 
   public measurable = '';
   public showTable = false;
@@ -74,10 +77,15 @@ export class VisualizationComponent implements OnInit, OnDestroy, AfterViewCheck
   public generatedQueryText = '';
   public allConversations: Conversation[] = [];
 
-  constructor(private zone: NgZone, private api: ApiService, private _snackBar: MatSnackBar) { }
+  constructor(
+    private zone: NgZone,
+    private apiService: ApiService,
+    private _snackBar: MatSnackBar,
+    private cognitiveService: CognitiveService
+  ) { }
 
   ngOnInit() {
-    this.dataSource = new VisualizationDataSource(this.api, this.uuid);
+    this.dataSource = new VisualizationDataSource(this.apiService, this.uuid);
     window.onbeforeunload = () => this.ngOnDestroy();
   }
 
@@ -94,12 +102,6 @@ export class VisualizationComponent implements OnInit, OnDestroy, AfterViewCheck
   }
 
   private handleSqlAnswer(sqlAnswer: SqlAnswer) {
-    // Handle errors
-    if (sqlAnswer.error) {
-      this.askChatbot.emit(sqlAnswer.error);
-      return;
-    }
-
     // Get measurable
     if (sqlAnswer.listMeasures.length > 0) {
       this.measurable = sqlAnswer.listMeasures[0];
@@ -114,13 +116,18 @@ export class VisualizationComponent implements OnInit, OnDestroy, AfterViewCheck
     }
 
     // Get Scalar Value (result of "sum", "avg" etc)
-    if (sqlAnswer.scalar > 0) {
-      this.allConversations[this.conversationIndex].answer = sqlAnswer.scalar.toString();
+    if (sqlAnswer.scalar > -1) {
+      this.allConversations[this.conversationIndex].answer = sqlAnswer.scalar.toFixed(2).toString();
       this.conversationIndex++;
       return;
     }
 
-    this.askChatbot.emit('Granularity Type');
+    // Handle errors
+    if (sqlAnswer.error) {
+      this.askChatbot.emit(sqlAnswer.error);
+    }
+    else
+      this.askChatbot.emit('Granularity Type');
   }
 
   private handleChatbotAnswer(chatbotAnswer: qna) {
@@ -129,7 +136,7 @@ export class VisualizationComponent implements OnInit, OnDestroy, AfterViewCheck
     switch (botAnswer) {
       case "What type of chart?":
         // Get Chart Data
-        this.subscriptions.push(this.api.getChartData(this.uuid).subscribe((res: ChartData[]) => {
+        this.subscriptions.push(this.apiService.getChartData(this.uuid).subscribe((res: ChartData[]) => {
           this.chartData = res;
           this.prepareChartData();
           console.log(res);
@@ -137,7 +144,7 @@ export class VisualizationComponent implements OnInit, OnDestroy, AfterViewCheck
         break;
       case "Table":
         this.loadingPrediction = true;
-        this.subscriptions.push(this.api.getTableData(this.uuid).subscribe((res: DisplayTable[]) => {
+        this.subscriptions.push(this.apiService.getTableData(this.uuid).subscribe((res: DisplayTable[]) => {
           this.tableData = res;
           this.tableVisualize();
           this.loadingPrediction = false;
@@ -206,7 +213,7 @@ export class VisualizationComponent implements OnInit, OnDestroy, AfterViewCheck
     this.showTable = true;
     this.allConversations[this.conversationIndex].answer = 'Please find the table below!'
     this.conversationIndex++;
-    if (this.tableData.length > 2) {
+    if (this.tableData.length > 2 && this.tableData.length < this.maxPredictionSize) {
       this.askChatbot.emit('Ask Prediction')
       const _conversation: Conversation = { question: '', answer: '' };
       this.allConversations = [...this.allConversations, _conversation];
@@ -370,7 +377,7 @@ export class VisualizationComponent implements OnInit, OnDestroy, AfterViewCheck
   private onShowChart(chartName: string) {
     this.allConversations[this.conversationIndex].answer = `Your ${chartName} is on the way!`
     this.conversationIndex++;
-    if (this.chartData.length > 2 && this.chartData.length < 500) {
+    if (this.chartData.length > 2 && this.chartData.length < this.maxPredictionSize) {
       this.askChatbot.emit('Ask Prediction')
       const _conversation: Conversation = { question: '', answer: '' };
       this.allConversations = [...this.allConversations, _conversation];
@@ -408,7 +415,7 @@ export class VisualizationComponent implements OnInit, OnDestroy, AfterViewCheck
       });
       // Append response prediction to current data
       this.subscriptions.push(
-        this.api.predict(predictionData).subscribe((res: PredictionData[]) => {
+        this.cognitiveService.predict(predictionData).subscribe((res: PredictionData[]) => {
           res.forEach(pd => {
             let row: ChartData = <ChartData>{};
             row[measurable] = pd.sales;
@@ -421,15 +428,13 @@ export class VisualizationComponent implements OnInit, OnDestroy, AfterViewCheck
           else if (this.amPieChart.data.length > 0) this.amPieChart.data = this.chartData;
           else if (this.amRadarChart.data.length > 0) this.amRadarChart.data = this.chartData;
           this.askChatbot.emit("Prediction Success");
-          this.loadingPrediction = false;
         },
           (error) => {
-            this.loadingPrediction = false;
             this._snackBar.open("Something went wrong with the prediction", "okay", { duration: 3000 });
-          }));
+          }, () => this.loadingPrediction = false));
     }
     // Get prediction based on table data
-    else if (this.tableData.length > 2 && this.tableData.length < 600) {
+    else if (this.tableData.length > 0) {
       // Populate table data for model (Sarima) fitting
       this.tableData.forEach(r => {
         let row: PredictionData = <PredictionData>{};
@@ -440,7 +445,7 @@ export class VisualizationComponent implements OnInit, OnDestroy, AfterViewCheck
       // Prediction response to be saved on to DB displayTable for serverside pagination and sorting
       let newTableData: DisplayTable[] = [];
       this.subscriptions.push(
-        this.api.predict(predictionData).subscribe((res: PredictionData[]) => {
+        this.cognitiveService.predict(predictionData).subscribe((res: PredictionData[]) => {
           res.forEach(pd => {
             let row: DisplayTable = <DisplayTable>{};
             row.uuid = this.tableData[0].uuid;
@@ -454,7 +459,7 @@ export class VisualizationComponent implements OnInit, OnDestroy, AfterViewCheck
           this.tableData.push(...newTableData);
           // Save prediction response to DB displayTable
           this.subscriptions.push(
-            this.api.saveDisplayTableData(newTableData).subscribe((res) => {
+            this.apiService.saveDisplayTableData(newTableData).subscribe((res) => {
               // Then reload table
               this.dataSource.loadData(this.tableData, this.measurable);
               this.askChatbot.emit("Prediction Success");
@@ -475,7 +480,7 @@ export class VisualizationComponent implements OnInit, OnDestroy, AfterViewCheck
     this.tableSubscriptions.forEach(sub => sub.unsubscribe());
     this.tableData = [];
     this.generatedQueryText = '';
-    this.dataSource = new VisualizationDataSource(this.api, this.uuid);
+    this.dataSource = new VisualizationDataSource(this.apiService, this.uuid);
   }
 
   public deleteChart() {
@@ -486,7 +491,7 @@ export class VisualizationComponent implements OnInit, OnDestroy, AfterViewCheck
 
   ngOnDestroy() {
     // Clear table on user exit/page refresh
-    this.api.deleteTable(this.uuid).subscribe();
+    this.apiService.deleteTable(this.uuid).subscribe();
     this.subscriptions.forEach(sub => sub.unsubscribe());
     this.tableSubscriptions.forEach(sub => sub.unsubscribe());
     this.zone.runOutsideAngular(() => {

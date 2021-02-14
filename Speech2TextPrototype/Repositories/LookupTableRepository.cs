@@ -79,7 +79,6 @@ namespace Speech2TextPrototype.Repositories
 
             // Check for scalar values (Max, Sum, etc.)
             // Uses reflection for the measurable to avoid numerous if statements (x3 code)
-            //if (!String.IsNullOrEmpty(aggregateFunction) && result.Any())
             if (!String.IsNullOrEmpty(aggregateFunction))
                 {
                 var result = _context.tdata.FromSqlRaw(query).ToList();
