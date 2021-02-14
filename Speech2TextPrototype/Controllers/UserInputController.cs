@@ -3,6 +3,7 @@ using Speech2TextPrototype.Models;
 using Speech2TextPrototype.Data;
 using Speech2TextPrototype.Services;
 using Microsoft.AspNetCore.Mvc;
+using Consumer_Retail_Research_Analytics_NLP.Models;
 
 namespace Speech2TextPrototype.Controllers
 {
@@ -23,28 +24,17 @@ namespace Speech2TextPrototype.Controllers
 
         [HttpPost]
         [Route("sqlAnswer")]
-        public IActionResult GetSqlAnswer([FromBody] PyRes pyRes)
+        public SqlAnswer GetSqlAnswer([FromBody] PyRes pyRes)
         {
             _lookupTableService.GetSpeechRecognitionCustomWords();
-            LookupOutputModel lookupOutput = _lookupTableService.Token2Sql(pyRes);
-
-            // The list of measures that the database supports
-            List<string> listMeasures = lookupOutput.measures;
-            string sqlQuery = lookupOutput.querySql;
-            double scalar = lookupOutput.scalarValue;
-
-            // Error Handling
-            string error = _lookupTableService.HandleErrors(lookupOutput);
-
-            return Ok(new { listMeasures, sqlQuery, scalar, error });
+            return _lookupTableService.Token2Sql(pyRes);   
         }
 
         [HttpGet]
         [Route("groupByAnswer")]
-        public IActionResult GetGroupByAnswer(string uuid, string sqlQuery, string groupByFilter)
+        public string GetGroupByAnswer(string uuid, string sqlQuery, string groupByFilter)
         {
-            var errors = _lookupTableService.GroupByFilters(sqlQuery, groupByFilter, uuid);
-            return Ok(errors);
+            return _lookupTableService.GroupByFilters(sqlQuery, groupByFilter, uuid);
         }
 
         [HttpGet]

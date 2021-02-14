@@ -1,4 +1,5 @@
-﻿using Speech2TextPrototype.Data;
+﻿using Consumer_Retail_Research_Analytics_NLP.Models;
+using Speech2TextPrototype.Data;
 using Speech2TextPrototype.Models;
 using Speech2TextPrototype.Repositories;
 using System.Collections.Generic;
@@ -13,9 +14,12 @@ namespace Speech2TextPrototype.Services
         {
             _lookupTableRepository = lookupTableRepository;
         }
-        public LookupOutputModel Token2Sql(PyRes res)
+
+        public SqlAnswer Token2Sql(PyRes res)
         {
-            return _lookupTableRepository.token2Sql(res);
+            var answer = _lookupTableRepository.token2Sql(res);
+            answer.error = HandleErrors(answer);
+            return answer;
         }
 
         public string GroupByFilters(string query, string groupByFilter, string uuid)
@@ -30,11 +34,10 @@ namespace Speech2TextPrototype.Services
         /// <param name="queryResult">The data returned from the TData table</param>
         /// <param name="listMeasures">A list of measures to display (sales)</param>
         /// <returns>Custom error code string for the qnamaker</returns>
-        public string HandleErrors(LookupOutputModel lookupOutput)
+        private string HandleErrors(SqlAnswer sqlAnswer)
         {
-            int listMeasuresLen = lookupOutput.measures.Count();
-            int listDatesLen = lookupOutput.dates.Count();
-            double scalar = lookupOutput.scalarValue;
+            int listMeasuresLen = sqlAnswer.measures.Count();
+            double scalar = sqlAnswer.scalar;
 
             if (listMeasuresLen == 0)
             {

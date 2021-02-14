@@ -1,5 +1,5 @@
 export interface SqlAnswer {
-  listMeasures: string[];
+  measures: string[];
   sqlQuery: string;
   scalar: number;
   error: string;

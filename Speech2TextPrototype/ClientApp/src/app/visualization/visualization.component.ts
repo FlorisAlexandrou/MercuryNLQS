@@ -96,15 +96,14 @@ export class VisualizationComponent implements OnInit, OnDestroy, AfterViewCheck
   handleQuestion(question: string) {
     const _conversation: Conversation = { question: question, answer: '' };
     this.allConversations = [...this.allConversations, _conversation];
-    console.log(this.allConversations);
     // Reset prompts when question is asked
     this.prompts = [];
   }
 
   private handleSqlAnswer(sqlAnswer: SqlAnswer) {
     // Get measurable
-    if (sqlAnswer.listMeasures.length > 0) {
-      this.measurable = sqlAnswer.listMeasures[0];
+    if (sqlAnswer.measures.length > 0) {
+      this.measurable = sqlAnswer.measures[0];
       // Fix measurable to match json key dynamically for prediction and charts
       this.processedMeasurable = 'm' + this.measurable.slice(1);
     }
@@ -139,7 +138,6 @@ export class VisualizationComponent implements OnInit, OnDestroy, AfterViewCheck
         this.subscriptions.push(this.apiService.getChartData(this.uuid).subscribe((res: ChartData[]) => {
           this.chartData = res;
           this.prepareChartData();
-          console.log(res);
         }));
         break;
       case "Table":
@@ -230,7 +228,6 @@ export class VisualizationComponent implements OnInit, OnDestroy, AfterViewCheck
       cd.timestamp = new Date(cd.perioD_START).getTime();
     });
     this.chartData.sort((a, b) => (a.timestamp > b.timestamp) ? 1 : -1);
-    console.log("Chart Data: ", this.chartData);
   }
 
   private createChart(chartType: string) {

@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Consumer_Retail_Research_Analytics_NLP.Models;
+using Microsoft.EntityFrameworkCore;
 using Speech2TextPrototype.Data;
 using Speech2TextPrototype.Models;
 using System;
@@ -62,7 +63,7 @@ namespace Speech2TextPrototype.Repositories
         /// </summary>
         /// <param name="res">Python Tokenizer Response</param>
         /// <returns>Tuple containing: the table response, the list of measurables, the list of dates and the query as a string</returns>
-        public LookupOutputModel token2Sql(PyRes res)
+        public SqlAnswer token2Sql(PyRes res)
         {
             string[] tokens = res.tokens;
             string[] bigrams = res.bigrams;
@@ -100,10 +101,10 @@ namespace Speech2TextPrototype.Repositories
                         break;
                 }
 
-                return new LookupOutputModel { measures = listMeasures, dates = listDates, querySql = query, scalarValue = scalar };
+                return new SqlAnswer { measures = listMeasures, sqlQuery = query, scalar = scalar };
             }
 
-            return new LookupOutputModel { measures = listMeasures, dates = listDates, querySql = query, scalarValue = scalar };
+            return new SqlAnswer { measures = listMeasures, sqlQuery = query, scalar = scalar };
         }
     
 

@@ -70,11 +70,9 @@ export class VisualizationDataSource extends DataSource<DisplayTable> {
         if (this.sort.active == 'sales') {
             column = this.measurable;
         }
-        console.log(column);
 
         this.api.getSortedData(column, this.sort.direction, this.paginator.pageIndex, this.paginator.pageSize, this.uuid)
             .subscribe((res: any) => {
-                console.log(res);
                 this.tdataSubject.next(res)
                 this.loadingSubject.next(false);
             });
